@@ -19,6 +19,10 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+protected:
+    void switchLampOn();
+    void switchLampOff();
+
 public slots:
     void onImageRecorderClosed(int, QProcess::ExitStatus);
 
@@ -27,7 +31,7 @@ private:
     QProcess*       pImageRecorder;
 
     qint64 pid;
-    int    ledPin;
+    int    gpioLEDpin;
     int    gpioHostHandle;
 };
 
