@@ -68,6 +68,9 @@ MainWindow::MainWindow(QWidget *parent)
     sOutFileName = settings.value("FileName",
                                   QString("test")).toString();
 
+    msecInterval = settings.value("Interval", 10000).toInt();
+    msecTotTime = settings.value("TotalTime", 0).toInt();
+
     // Get the initial camera position from the past stored values
     cameraPanAngle  = settings.value("panAngle",  0.0).toDouble();
     cameraTiltAngle = settings.value("tiltAngle", 0.0).toDouble();
@@ -112,6 +115,8 @@ MainWindow::closeEvent(QCloseEvent *event) {
     settings.setValue("mainWindowState", saveState());
     settings.setValue("BaseDir", sBaseDir);
     settings.setValue("FileName", sOutFileName);
+    settings.setValue("Interval", msecInterval);
+    settings.setValue("TotalTime", msecTotTime);
     settings.setValue("panAngle",  cameraPanAngle);
     settings.setValue("tiltAngle", cameraTiltAngle);
 #if defined(Q_PROCESSOR_ARM)
