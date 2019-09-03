@@ -3,9 +3,12 @@
 #if defined(Q_PROCESSOR_ARM)
     #include "pigpiod_if2.h"// The library for using GPIO pins on Raspberry
 #endif
+#include <sys/types.h>
+#include <signal.h>
 #include <QMessageBox>
 #include <QStandardPaths>
 #include <QSettings>
+#include <QThread>
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -87,6 +90,11 @@ MainWindow::MainWindow(QWidget *parent)
     QSettings settings;
     restoreGeometry(settings.value("mainWindowGeometry").toByteArray());
     restoreState(settings.value("mainWindowState").toByteArray());
+
+    connect(&intervalTimer,
+            SIGNAL(timeout()),
+            this,
+            SLOT(onTimeToGetNewImage()));
 }
 
 
@@ -138,8 +146,19 @@ MainWindow::switchLampOff() {
 }
 
 
+bool
+MainWindow::checkValues() {
+    return true;
+}
+
+
 void
 MainWindow::on_startButton_clicked() {
+    if(!checkValues()) {
+        pUi->statusBar->showMessage((QString("Error: Check Values !")));
+        return;
+    }
+    imageNum = 0;
     QString sCommand = QString("raspistill -s ");
     sCommand += QString("-t %1").arg(0);
 
@@ -152,18 +171,16 @@ MainWindow::on_startButton_clicked() {
             SLOT(onImageRecorderClosed(int, QProcess::ExitStatus)));
     pImageRecorder->start(sCommand);
     if(!pImageRecorder->waitForStarted(3000)) {
-        QMessageBox::critical(this,
-                              QString("raspistill Error"),
-                              QString("Non riesco ad eseguire 'raspistill'."));
+        pUi->statusBar->showMessage(QString("Non riesco ad eseguire 'raspistill'."));
         pImageRecorder->terminate();
         delete pImageRecorder;
         pImageRecorder = nullptr;
-        exit(EXIT_FAILURE);
+        return;
     }
     pid = pImageRecorder->processId();
 #endif
-
     pUi->statusBar->showMessage(sCommand);
+    intervalTimer.start(msecInterval);
 }
 
 
@@ -209,3 +226,14 @@ MainWindow::onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus)
     Q_UNUSED(exitStatus);
 }
 
+
+void
+MainWindow::onTimeToGetNewImage() {
+    switchLampOn();
+    repaint();
+    QThread::msleep(100);
+    kill(pid, SIGUSR1);
+    QThread::msleep(100);
+    switchLampOff();
+    repaint();
+}

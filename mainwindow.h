@@ -4,6 +4,7 @@
 
 #include <QMainWindow>
 #include <QProcess>
+#include <QTimer>
 
 
 namespace Ui {
@@ -22,6 +23,7 @@ public:
 protected:
     void switchLampOn();
     void switchLampOff();
+    bool checkValues();
 
 public slots:
     void onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus);
@@ -30,21 +32,22 @@ private slots:
     void on_startButton_clicked();
     void on_intervalEdit_textEdited(const QString &arg1);
     void on_intervalEdit_editingFinished();
-
     void on_tTimeEdit_textEdited(const QString &arg1);
     void on_tTimeEdit_editingFinished();
+    void onTimeToGetNewImage();
 
 private:
     Ui::MainWindow* pUi;
     QProcess*       pImageRecorder;
 
-    qint64 pid;
+    int pid;
 
     int    gpioLEDpin;
     int    gpioHostHandle;
 
     int    msecInterval;
     int    msecTotTime;
+    int    imageNum;
 
     QString sNormalStyle;
     QString sErrorStyle;
@@ -54,6 +57,7 @@ private:
     QString sBaseDir;
     QString sOutFileName;
 
+    QTimer intervalTimer;
 };
 
 #endif // MAINWINDOW_H
