@@ -233,7 +233,10 @@ void
 MainWindow::onTimeToGetNewImage() {
     switchLampOn();
     QThread::msleep(100);
-    kill(pid, SIGUSR1);
+    int iErr = kill(pid, SIGUSR1);
+    if(iErr == -1) {
+        pUi->statusBar->showMessage(QString(Error %1 in sending SIGUSR1 signal).arg(iErr));
+    }
     QThread::msleep(100);
     switchLampOff();
 }
