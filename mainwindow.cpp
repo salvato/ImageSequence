@@ -13,6 +13,10 @@
 
 #define MIN_INTERVAL 3000 // in ms (depends on the image format: jpeg is HW accelerated !
 
+#define LED_PIN  23 // GPIO Numbers are Broadcom (BCM) numbers
+#define PAN_PIN  14 // GPIO Numbers are Broadcom (BCM) numbers
+#define TILT_PIN 26 // GPIO Numbers are Broadcom (BCM) numbers
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -27,15 +31,19 @@ MainWindow::MainWindow(QWidget *parent)
     // GND on pins 6, 9, 14, 20, 25, 30, 34 or 39
     // in the 40 pin GPIO connector.
     // ================================================
-    , gpioLEDpin(23)
+    , gpioLEDpin(LED_PIN)
+    , panPin(PAN_PIN)  // BCM14 is Pin  8 in the 40 pin GPIO connector.
+    , tiltPin(TILT_PIN)// BCM26 IS Pin 37 in the 40 pin GPIO connector.
     , gpioHostHandle(-1)
     , msecInterval(10000)
     , msecTotTime(0)
 {
+    QSettings settings;
     pUi->setupUi(this);
 
-    sBaseDir     = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
-    sOutFileName = QString("test");
+    PWMfrequency    =   50;   // in Hz
+    pulseWidthAt_90 =  600.0; // in us
+    pulseWidthAt90  = 2200.0; // in us
 
     // Setup the QLineEdit styles
     sNormalStyle = pUi->lampStatus->styleSheet();
@@ -55,7 +63,13 @@ MainWindow::MainWindow(QWidget *parent)
                         selection-background-color: rgb(128, 128, 255); \
                     }";
 
+    sBaseDir     = settings.value("BaseDir",
+                                  QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)).toString();
+    sOutFileName = settings.value("FileName",
+                                  QString("test")).toString();
+
 #if defined(Q_PROCESSOR_ARM)
+    int iResult;
     gpioHostHandle = pigpio_start(QString("localhost").toLocal8Bit().data(),
                                   QString("8888").toLocal8Bit().data());
     if(gpioHostHandle < 0) {
@@ -79,6 +93,42 @@ MainWindow::MainWindow(QWidget *parent)
                                    .arg(gpioLEDpin));
         exit(EXIT_FAILURE);
     }
+
+    // Get the initial camera position from the past stored values
+    cameraPanAngle  = settings.value("panAngle",  0.0).toDouble();
+    cameraTiltAngle = settings.value("tiltAngle", 0.0).toDouble();
+
+    if(gpioHostHandle >= 0) {
+        iResult = set_PWM_frequency(gpioHostHandle, panPin, PWMfrequency);
+        if(iResult < 0) {
+            QMessageBox::critical(this,
+                                  QString("pigpiod Error"),
+                                  QString("Non riesco a definire la frequenza del PWM per il Pan."));
+        }
+        double pulseWidth = pulseWidthAt_90 +(pulseWidthAt90-pulseWidthAt_90)/180.0 * (cameraPanAngle+90.0);// In us
+        iResult = set_servo_pulsewidth(gpioHostHandle, panPin, u_int32_t(pulseWidth));
+        if(iResult < 0) {
+            QMessageBox::critical(this,
+                                  QString("pigpiod Error"),
+                                  QString("Non riesco a far partire il PWM per il Pan."));
+        }
+        set_PWM_frequency(gpioHostHandle, panPin, 0);
+
+        iResult = set_PWM_frequency(gpioHostHandle, tiltPin, PWMfrequency);
+        if(iResult < 0) {
+            QMessageBox::critical(this,
+                                  QString("pigpiod Error"),
+                                  QString("Non riesco a definire la frequenza del PWM per il Tilt."));
+        }
+        pulseWidth = pulseWidthAt_90 +(pulseWidthAt90-pulseWidthAt_90)/180.0 * (cameraTiltAngle+90.0);// In us
+        iResult = set_servo_pulsewidth(gpioHostHandle, tiltPin, u_int32_t(pulseWidth));
+        if(iResult < 0) {
+            QMessageBox::critical(this,
+                                  QString("pigpiod Error"),
+                                  QString("Non riesco a far partire il PWM per il Tilt."));
+        }
+        set_PWM_frequency(gpioHostHandle, tiltPin, 0);
+    }
 #endif
 
     switchLampOff();
@@ -91,7 +141,6 @@ MainWindow::MainWindow(QWidget *parent)
     pUi->tTimeEdit->setText(QString("%1").arg(msecTotTime));
 
     // Restore Geometry and State of the window
-    QSettings settings;
     restoreGeometry(settings.value("mainWindowGeometry").toByteArray());
     restoreState(settings.value("mainWindowState").toByteArray());
 
@@ -117,6 +166,10 @@ MainWindow::closeEvent(QCloseEvent *event) {
     QSettings settings;
     settings.setValue("mainWindowGeometry", saveGeometry());
     settings.setValue("mainWindowState", saveState());
+    settings.setValue("BaseDir", sBaseDir);
+    settings.setValue("FileName", sOutFileName);
+    settings.setValue("panAngle",  cameraPanAngle);
+    settings.setValue("tiltAngle", cameraTiltAngle);
 #if defined(Q_PROCESSOR_ARM)
     if(gpioHostHandle >= 0)
         pigpio_stop(gpioHostHandle);

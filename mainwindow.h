@@ -47,6 +47,13 @@ private:
     pid_t pid;
 
     uint   gpioLEDpin;
+    uint   panPin;
+    uint   tiltPin;
+    double cameraPanAngle;
+    double cameraTiltAngle;
+    uint   PWMfrequency;     // in Hz
+    double pulseWidthAt_90;  // in us
+    double pulseWidthAt90;   // in us
     int    gpioHostHandle;
 
     int    msecInterval;
