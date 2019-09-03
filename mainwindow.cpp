@@ -43,6 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
     PWMfrequency    =   50;   // in Hz
     pulseWidthAt_90 =  600.0; // in us
     pulseWidthAt90  = 2200.0; // in us
+
     // Restore settings
     sBaseDir     = settings.value("BaseDir",
                                   QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)).toString();
@@ -50,7 +51,6 @@ MainWindow::MainWindow(QWidget *parent)
                                   QString("test")).toString();
     msecInterval = settings.value("Interval", 10000).toInt();
     msecTotTime = settings.value("TotalTime", 0).toInt();
-    // Get the initial camera position from the past stored values
     cameraPanAngle  = settings.value("panAngle",  0.0).toDouble();
     cameraTiltAngle = settings.value("tiltAngle", 0.0).toDouble();
 
@@ -82,6 +82,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     switchLampOff();
 
+    // Init User Interface with restored values
     pUi->pathEdit->setText(sBaseDir);
     pUi->nameEdit->setText(sOutFileName);
     pUi->startButton->setEnabled(true);
