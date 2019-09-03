@@ -24,7 +24,7 @@ protected:
     void switchLampOff();
 
 public slots:
-    void onImageRecorderClosed(int, QProcess::ExitStatus);
+    void onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus);
 
 private:
     Ui::MainWindow* ui;
@@ -33,6 +33,11 @@ private:
     qint64 pid;
     int    gpioLEDpin;
     int    gpioHostHandle;
+
+    QString          sNormalStyle;
+    QString          sErrorStyle;
+    QString          sDarkStyle;
+    QString          sPhotoStyle;
 };
 
 #endif // MAINWINDOW_H
