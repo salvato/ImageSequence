@@ -12,10 +12,10 @@
 
 
 #define MIN_INTERVAL 3000 // in ms (depends on the image format: jpeg is HW accelerated !
-
-#define LED_PIN  23 // GPIO Numbers are Broadcom (BCM) numbers
-#define PAN_PIN  14 // GPIO Numbers are Broadcom (BCM) numbers
-#define TILT_PIN 26 // GPIO Numbers are Broadcom (BCM) numbers
+// GPIO Numbers are Broadcom (BCM) numbers
+#define LED_PIN  23 // BCM23 is Pin 16 in the 40 pin GPIO connector.
+#define PAN_PIN  14 // BCM14 is Pin  8 in the 40 pin GPIO connector.
+#define TILT_PIN 26 // BCM26 IS Pin 37 in the 40 pin GPIO connector.
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -32,15 +32,14 @@ MainWindow::MainWindow(QWidget *parent)
     // in the 40 pin GPIO connector.
     // ================================================
     , gpioLEDpin(LED_PIN)
-    , panPin(PAN_PIN)  // BCM14 is Pin  8 in the 40 pin GPIO connector.
-    , tiltPin(TILT_PIN)// BCM26 IS Pin 37 in the 40 pin GPIO connector.
+    , panPin(PAN_PIN)
+    , tiltPin(TILT_PIN)
     , gpioHostHandle(-1)
-    , msecInterval(10000)
-    , msecTotTime(0)
 {
     QSettings settings;
     pUi->setupUi(this);
 
+    // Values to be checked with the used servos
     PWMfrequency    =   50;   // in Hz
     pulseWidthAt_90 =  600.0; // in us
     pulseWidthAt90  = 2200.0; // in us
@@ -62,19 +61,18 @@ MainWindow::MainWindow(QWidget *parent)
                         background: rgb(255, 255, 0); \
                         selection-background-color: rgb(128, 128, 255); \
                     }";
-
+    // Restore settings
     sBaseDir     = settings.value("BaseDir",
                                   QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)).toString();
     sOutFileName = settings.value("FileName",
                                   QString("test")).toString();
-
     msecInterval = settings.value("Interval", 10000).toInt();
     msecTotTime = settings.value("TotalTime", 0).toInt();
-
     // Get the initial camera position from the past stored values
     cameraPanAngle  = settings.value("panAngle",  0.0).toDouble();
     cameraTiltAngle = settings.value("tiltAngle", 0.0).toDouble();
 
+    // Init GPIOs
     if(!gpioInit())
         exit(EXIT_FAILURE);
 
@@ -91,6 +89,7 @@ MainWindow::MainWindow(QWidget *parent)
     restoreGeometry(settings.value("mainWindowGeometry").toByteArray());
     restoreState(settings.value("mainWindowState").toByteArray());
 
+    intervalTimer.stop();// Probably non needed but...does'nt hurt
     connect(&intervalTimer,
             SIGNAL(timeout()),
             this,
