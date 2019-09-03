@@ -3,7 +3,6 @@
 #if defined(Q_PROCESSOR_ARM)
     #include "pigpiod_if2.h"// The library for using GPIO pins on Raspberry
 #endif
-#include <sys/types.h>
 #include <signal.h>
 #include <QMessageBox>
 #include <QStandardPaths>
@@ -26,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     // ================================================
     , gpioLEDpin(23)
     , gpioHostHandle(-1)
-    , msecInterval(1000)
+    , msecInterval(10000)
     , msecTotTime(0)
 {
     pUi->setupUi(this);
@@ -53,8 +52,8 @@ MainWindow::MainWindow(QWidget *parent)
                     }";
 
 #if defined(Q_PROCESSOR_ARM)
-    gpioHostHandle = pigpio_start(reinterpret_cast<const char*>("localhost"),
-                                  reinterpret_cast<const char*>("8888"));
+    gpioHostHandle = pigpio_start(QString("localhost").toLocal8Bit().data(),
+                                  QString("8888").toLocal8Bit().data());
     if(gpioHostHandle < 0) {
         QMessageBox::critical(this,
                               QString("pigpiod Error !"),
@@ -83,6 +82,7 @@ MainWindow::MainWindow(QWidget *parent)
     pUi->pathEdit->setText(sBaseDir);
     pUi->nameEdit->setText(sOutFileName);
     pUi->startButton->setEnabled(true);
+    pUi->stopButton->setDisabled(true);
     pUi->intervalEdit->setText(QString("%1").arg(msecInterval, 8));
     pUi->tTimeEdit->setText(QString("%1").arg(msecTotTime, 8));
 
@@ -98,12 +98,14 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 
-MainWindow::~MainWindow() {
-#if defined(Q_PROCESSOR_ARM)
-    if(gpioHostHandle >= 0)
-        pigpio_stop(gpioHostHandle);
-#endif
+void
+MainWindow::closeEvent(QCloseEvent *event) {
+    Q_UNUSED(event)
     if(pImageRecorder) {
+        int iErr = kill(pid, SIGKILL);
+        if(iErr == -1) {
+            pUi->statusBar->showMessage(QString("Error %1 in sending SIGKILL signal").arg(iErr));
+        }
         pImageRecorder->close();
         pImageRecorder->waitForFinished(3000);
         pImageRecorder->deleteLater();
@@ -113,6 +115,10 @@ MainWindow::~MainWindow() {
     settings.setValue("mainWindowGeometry", saveGeometry());
     settings.setValue("mainWindowState", saveState());
     delete pUi;
+//#if defined(Q_PROCESSOR_ARM)
+//    if(gpioHostHandle >= 0)
+//        pigpio_stop(gpioHostHandle);// This does'nt works
+//#endif
 }
 
 
@@ -162,10 +168,10 @@ MainWindow::on_startButton_clicked() {
     }
     imageNum = 0;
     QString sCommand = QString("raspistill -s ");
-    sCommand += QString("-t %1").arg(0);
+    sCommand += QString("-t %1 ").arg(0);
+    sCommand += QString("-o %1/%2_%04d.jpg").arg(sBaseDir).arg(sOutFileName);
 
 #if defined(Q_PROCESSOR_ARM)
-
     pImageRecorder = new QProcess(this);
     connect(pImageRecorder,
             SIGNAL(finished(int, QProcess::ExitStatus)),
@@ -179,20 +185,42 @@ MainWindow::on_startButton_clicked() {
         pImageRecorder = nullptr;
         return;
     }
-    pid = pImageRecorder->processId();
+    pid = pid_t(pImageRecorder->processId());
 #endif
+
     pUi->statusBar->showMessage(sCommand);
+    pUi->startButton->setDisabled(true);
+    pUi->stopButton->setEnabled(true);
     intervalTimer.start(msecInterval);
 }
 
 
 void
+MainWindow::on_stopButton_clicked() {
+    intervalTimer.stop();
+    if(pImageRecorder) {
+        int iErr = kill(pid, SIGKILL);
+        if(iErr == -1) {
+            pUi->statusBar->showMessage(QString("Error %1 in sending SIGKILL signal").arg(iErr));
+        }
+        pImageRecorder->close();
+        pImageRecorder->waitForFinished(3000);
+        pImageRecorder->deleteLater();
+        pImageRecorder = Q_NULLPTR;
+    }
+    switchLampOff();
+    pUi->startButton->setEnabled(true);
+    pUi->stopButton->setDisabled(true);
+}
+
+
+void
 MainWindow::on_intervalEdit_textEdited(const QString &arg1) {
-    if(arg1.toInt() > 10) {
+    if(arg1.toInt() < 10000) {
+        pUi->intervalEdit->setStyleSheet(sErrorStyle);
+    } else {
         msecInterval = arg1.toInt();
         pUi->intervalEdit->setStyleSheet(sNormalStyle);
-    } else {
-        pUi->intervalEdit->setStyleSheet(sErrorStyle);
     }
 }
 
@@ -235,8 +263,8 @@ MainWindow::onTimeToGetNewImage() {
     QThread::msleep(100);
     int iErr = kill(pid, SIGUSR1);
     if(iErr == -1) {
-        pUi->statusBar->showMessage(QString(Error %1 in sending SIGUSR1 signal).arg(iErr));
+        pUi->statusBar->showMessage(QString("Error %1 in sending SIGUSR1 signal").arg(iErr));
     }
-    QThread::msleep(100);
+    QThread::msleep(3000);
     switchLampOff();
 }

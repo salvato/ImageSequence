@@ -5,6 +5,8 @@
 #include <QMainWindow>
 #include <QProcess>
 #include <QTimer>
+#include <sys/types.h>
+
 
 
 namespace Ui {
@@ -18,9 +20,9 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
 
 protected:
+    void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
     void switchLampOn();
     void switchLampOff();
     bool checkValues();
@@ -36,13 +38,15 @@ private slots:
     void on_tTimeEdit_editingFinished();
     void onTimeToGetNewImage();
 
+    void on_stopButton_clicked();
+
 private:
     Ui::MainWindow* pUi;
     QProcess*       pImageRecorder;
 
-    int pid;
+    pid_t pid;
 
-    int    gpioLEDpin;
+    uint   gpioLEDpin;
     int    gpioHostHandle;
 
     int    msecInterval;
