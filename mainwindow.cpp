@@ -128,6 +128,7 @@ MainWindow::switchLampOn() {
                                    .arg(gpioLEDpin));
 #endif
     pUi->lampStatus->setStyleSheet(sPhotoStyle);
+    repaint();
 }
 
 
@@ -143,6 +144,7 @@ MainWindow::switchLampOff() {
                                    .arg(gpioLEDpin));
 #endif
     pUi->lampStatus->setStyleSheet(sDarkStyle);
+    repaint();
 }
 
 
@@ -230,10 +232,8 @@ MainWindow::onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus)
 void
 MainWindow::onTimeToGetNewImage() {
     switchLampOn();
-    repaint();
     QThread::msleep(100);
     kill(pid, SIGUSR1);
     QThread::msleep(100);
     switchLampOff();
-    repaint();
 }
