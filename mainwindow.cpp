@@ -8,6 +8,9 @@
 #include <QStandardPaths>
 #include <QSettings>
 #include <QThread>
+#include <QDebug>
+
+#define MIN_INTERVAL 3000 // in ms
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -101,24 +104,22 @@ MainWindow::MainWindow(QWidget *parent)
 void
 MainWindow::closeEvent(QCloseEvent *event) {
     Q_UNUSED(event)
+    intervalTimer.stop();
     if(pImageRecorder) {
-        int iErr = kill(pid, SIGKILL);
-        if(iErr == -1) {
-            pUi->statusBar->showMessage(QString("Error %1 in sending SIGKILL signal").arg(iErr));
-        }
+        kill(pid, SIGKILL);
         pImageRecorder->close();
         pImageRecorder->waitForFinished(3000);
         pImageRecorder->deleteLater();
-        pImageRecorder = Q_NULLPTR;
+        pImageRecorder = nullptr;
     }
+    switchLampOff();
     QSettings settings;
     settings.setValue("mainWindowGeometry", saveGeometry());
     settings.setValue("mainWindowState", saveState());
-    delete pUi;
-//#if defined(Q_PROCESSOR_ARM)
-//    if(gpioHostHandle >= 0)
-//        pigpio_stop(gpioHostHandle);// This does'nt works
-//#endif
+#if defined(Q_PROCESSOR_ARM)
+    if(gpioHostHandle >= 0)
+        pigpio_stop(gpioHostHandle);// This does'nt works
+#endif
 }
 
 
@@ -168,6 +169,12 @@ MainWindow::on_startButton_clicked() {
     }
     imageNum = 0;
     QString sCommand = QString("raspistill -s ");
+    sCommand += QString("-n ");// No preview
+    sCommand += QString("-ex auto ");// Exposure mode; Auto
+    sCommand += QString("-awb auto ");// White Balance; Auto
+//    sCommand += QString("-awb fluorescent ");// White Balance; Fluorescent tube
+    sCommand += QString("-drc off ");// Dynamic Range Compression: off
+    sCommand += QString("-q 100 ");// JPEG quality: 100=max
     sCommand += QString("-t %1 ").arg(0);
     sCommand += QString("-o %1/%2_%04d.jpg").arg(sBaseDir).arg(sOutFileName);
 
@@ -191,6 +198,7 @@ MainWindow::on_startButton_clicked() {
     pUi->statusBar->showMessage(sCommand);
     pUi->startButton->setDisabled(true);
     pUi->stopButton->setEnabled(true);
+    onTimeToGetNewImage();
     intervalTimer.start(msecInterval);
 }
 
@@ -206,7 +214,7 @@ MainWindow::on_stopButton_clicked() {
         pImageRecorder->close();
         pImageRecorder->waitForFinished(3000);
         pImageRecorder->deleteLater();
-        pImageRecorder = Q_NULLPTR;
+        pImageRecorder = nullptr;
     }
     switchLampOff();
     pUi->startButton->setEnabled(true);
@@ -216,7 +224,7 @@ MainWindow::on_stopButton_clicked() {
 
 void
 MainWindow::on_intervalEdit_textEdited(const QString &arg1) {
-    if(arg1.toInt() < 10000) {
+    if(arg1.toInt() < MIN_INTERVAL) {
         pUi->intervalEdit->setStyleSheet(sErrorStyle);
     } else {
         msecInterval = arg1.toInt();
@@ -260,11 +268,11 @@ MainWindow::onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus)
 void
 MainWindow::onTimeToGetNewImage() {
     switchLampOn();
-    QThread::msleep(100);
+    QThread::msleep(300);
     int iErr = kill(pid, SIGUSR1);
     if(iErr == -1) {
         pUi->statusBar->showMessage(QString("Error %1 in sending SIGUSR1 signal").arg(iErr));
     }
-    QThread::msleep(3000);
+    QThread::msleep(300);
     switchLampOff();
 }

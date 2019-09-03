@@ -8,5 +8,6 @@ main(int argc, char *argv[]) {
     MainWindow w;
     w.show();
 
-    return a.exec();
+    int iRes = a.exec();
+    return iRes;
 }
