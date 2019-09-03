@@ -43,6 +43,16 @@ MainWindow::MainWindow(QWidget *parent)
     PWMfrequency    =   50;   // in Hz
     pulseWidthAt_90 =  600.0; // in us
     pulseWidthAt90  = 2200.0; // in us
+    // Restore settings
+    sBaseDir     = settings.value("BaseDir",
+                                  QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)).toString();
+    sOutFileName = settings.value("FileName",
+                                  QString("test")).toString();
+    msecInterval = settings.value("Interval", 10000).toInt();
+    msecTotTime = settings.value("TotalTime", 0).toInt();
+    // Get the initial camera position from the past stored values
+    cameraPanAngle  = settings.value("panAngle",  0.0).toDouble();
+    cameraTiltAngle = settings.value("tiltAngle", 0.0).toDouble();
 
     // Setup the QLineEdit styles
     sNormalStyle = pUi->lampStatus->styleSheet();
@@ -61,16 +71,10 @@ MainWindow::MainWindow(QWidget *parent)
                         background: rgb(255, 255, 0); \
                         selection-background-color: rgb(128, 128, 255); \
                     }";
-    // Restore settings
-    sBaseDir     = settings.value("BaseDir",
-                                  QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)).toString();
-    sOutFileName = settings.value("FileName",
-                                  QString("test")).toString();
-    msecInterval = settings.value("Interval", 10000).toInt();
-    msecTotTime = settings.value("TotalTime", 0).toInt();
-    // Get the initial camera position from the past stored values
-    cameraPanAngle  = settings.value("panAngle",  0.0).toDouble();
-    cameraTiltAngle = settings.value("tiltAngle", 0.0).toDouble();
+
+    // Restore Geometry and State of the window
+    restoreGeometry(settings.value("mainWindowGeometry").toByteArray());
+    restoreState(settings.value("mainWindowState").toByteArray());
 
     // Init GPIOs
     if(!gpioInit())
@@ -84,10 +88,6 @@ MainWindow::MainWindow(QWidget *parent)
     pUi->stopButton->setDisabled(true);
     pUi->intervalEdit->setText(QString("%1").arg(msecInterval));
     pUi->tTimeEdit->setText(QString("%1").arg(msecTotTime));
-
-    // Restore Geometry and State of the window
-    restoreGeometry(settings.value("mainWindowGeometry").toByteArray());
-    restoreState(settings.value("mainWindowState").toByteArray());
 
     intervalTimer.stop();// Probably non needed but...does'nt hurt
     connect(&intervalTimer,
