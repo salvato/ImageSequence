@@ -10,7 +10,8 @@
 #include <QThread>
 #include <QDebug>
 
-#define MIN_INTERVAL 3000 // in ms
+
+#define MIN_INTERVAL 3000 // in ms (depends on the image format: jpeg is HW accelerated !
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -86,8 +87,8 @@ MainWindow::MainWindow(QWidget *parent)
     pUi->nameEdit->setText(sOutFileName);
     pUi->startButton->setEnabled(true);
     pUi->stopButton->setDisabled(true);
-    pUi->intervalEdit->setText(QString("%1").arg(msecInterval, 8));
-    pUi->tTimeEdit->setText(QString("%1").arg(msecTotTime, 8));
+    pUi->intervalEdit->setText(QString("%1").arg(msecInterval));
+    pUi->tTimeEdit->setText(QString("%1").arg(msecTotTime));
 
     // Restore Geometry and State of the window
     QSettings settings;
@@ -118,7 +119,7 @@ MainWindow::closeEvent(QCloseEvent *event) {
     settings.setValue("mainWindowState", saveState());
 #if defined(Q_PROCESSOR_ARM)
     if(gpioHostHandle >= 0)
-        pigpio_stop(gpioHostHandle);// This does'nt works
+        pigpio_stop(gpioHostHandle);
 #endif
 }
 
@@ -195,7 +196,11 @@ MainWindow::on_startButton_clicked() {
     pid = pid_t(pImageRecorder->processId());
 #endif
 
-    pUi->statusBar->showMessage(sCommand);
+//    pUi->statusBar->showMessage(sCommand);
+    QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
+    for(int i=0; i<widgets.size(); i++) {
+        widgets[i]->setDisabled(true);
+    }
     pUi->startButton->setDisabled(true);
     pUi->stopButton->setEnabled(true);
     onTimeToGetNewImage();
@@ -217,6 +222,10 @@ MainWindow::on_stopButton_clicked() {
         pImageRecorder = nullptr;
     }
     switchLampOff();
+    QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
+    for(int i=0; i<widgets.size(); i++) {
+        widgets[i]->setEnabled(true);
+    }
     pUi->startButton->setEnabled(true);
     pUi->stopButton->setDisabled(true);
 }
@@ -235,7 +244,7 @@ MainWindow::on_intervalEdit_textEdited(const QString &arg1) {
 
 void
 MainWindow::on_intervalEdit_editingFinished() {
-    pUi->intervalEdit->setText(QString("%1").arg(msecInterval, 8));
+    pUi->intervalEdit->setText(QString("%1").arg(msecInterval));
     pUi->intervalEdit->setStyleSheet(sNormalStyle);
 }
 
@@ -253,7 +262,7 @@ MainWindow::on_tTimeEdit_textEdited(const QString &arg1) {
 
 void
 MainWindow::on_tTimeEdit_editingFinished() {
-    pUi->tTimeEdit->setText(QString("%1").arg(msecTotTime, 8));
+    pUi->tTimeEdit->setText(QString("%1").arg(msecTotTime));
     pUi->tTimeEdit->setStyleSheet(sNormalStyle);
 }
 
