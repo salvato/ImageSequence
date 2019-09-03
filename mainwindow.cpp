@@ -68,68 +68,12 @@ MainWindow::MainWindow(QWidget *parent)
     sOutFileName = settings.value("FileName",
                                   QString("test")).toString();
 
-#if defined(Q_PROCESSOR_ARM)
-    int iResult;
-    gpioHostHandle = pigpio_start(QString("localhost").toLocal8Bit().data(),
-                                  QString("8888").toLocal8Bit().data());
-    if(gpioHostHandle < 0) {
-        QMessageBox::critical(this,
-                              QString("pigpiod Error !"),
-                              QString("Non riesco ad inizializzare la GPIO."));
-        exit(EXIT_FAILURE);
-    }
-    if(set_mode(gpioHostHandle, gpioLEDpin, PI_OUTPUT) < 0) {
-        QMessageBox::critical(this,
-                              QString("pigpiod Error"),
-                              QString("Unable to initialize GPIO%1 as Output")
-                                   .arg(gpioLEDpin));
-        exit(EXIT_FAILURE);
-    }
-
-    if(set_pull_up_down(gpioHostHandle, gpioLEDpin, PI_PUD_UP) < 0) {
-        QMessageBox::critical(this,
-                              QString("pigpiod Error"),
-                              QString("Unable to set GPIO%1 Pull-Up")
-                                   .arg(gpioLEDpin));
-        exit(EXIT_FAILURE);
-    }
-
     // Get the initial camera position from the past stored values
     cameraPanAngle  = settings.value("panAngle",  0.0).toDouble();
     cameraTiltAngle = settings.value("tiltAngle", 0.0).toDouble();
 
-    if(gpioHostHandle >= 0) {
-        iResult = set_PWM_frequency(gpioHostHandle, panPin, PWMfrequency);
-        if(iResult < 0) {
-            QMessageBox::critical(this,
-                                  QString("pigpiod Error"),
-                                  QString("Non riesco a definire la frequenza del PWM per il Pan."));
-        }
-        double pulseWidth = pulseWidthAt_90 +(pulseWidthAt90-pulseWidthAt_90)/180.0 * (cameraPanAngle+90.0);// In us
-        iResult = set_servo_pulsewidth(gpioHostHandle, panPin, u_int32_t(pulseWidth));
-        if(iResult < 0) {
-            QMessageBox::critical(this,
-                                  QString("pigpiod Error"),
-                                  QString("Non riesco a far partire il PWM per il Pan."));
-        }
-        set_PWM_frequency(gpioHostHandle, panPin, 0);
-
-        iResult = set_PWM_frequency(gpioHostHandle, tiltPin, PWMfrequency);
-        if(iResult < 0) {
-            QMessageBox::critical(this,
-                                  QString("pigpiod Error"),
-                                  QString("Non riesco a definire la frequenza del PWM per il Tilt."));
-        }
-        pulseWidth = pulseWidthAt_90 +(pulseWidthAt90-pulseWidthAt_90)/180.0 * (cameraTiltAngle+90.0);// In us
-        iResult = set_servo_pulsewidth(gpioHostHandle, tiltPin, u_int32_t(pulseWidth));
-        if(iResult < 0) {
-            QMessageBox::critical(this,
-                                  QString("pigpiod Error"),
-                                  QString("Non riesco a far partire il PWM per il Tilt."));
-        }
-        set_PWM_frequency(gpioHostHandle, tiltPin, 0);
-    }
-#endif
+    if(!gpioInit())
+        exit(EXIT_FAILURE);
 
     switchLampOff();
 
@@ -174,6 +118,85 @@ MainWindow::closeEvent(QCloseEvent *event) {
     if(gpioHostHandle >= 0)
         pigpio_stop(gpioHostHandle);
 #endif
+}
+
+bool
+MainWindow::gpioInit() {
+#if defined(Q_PROCESSOR_ARM)
+    int iResult;
+    gpioHostHandle = pigpio_start(QString("localhost").toLocal8Bit().data(),
+                                  QString("8888").toLocal8Bit().data());
+    if(gpioHostHandle < 0) {
+        QMessageBox::critical(this,
+                              QString("pigpiod Error !"),
+                              QString("Non riesco ad inizializzare la GPIO."));
+        return false;
+    }
+    iResult = set_mode(gpioHostHandle, gpioLEDpin, PI_OUTPUT);
+    if(iResult < 0) {
+        QMessageBox::critical(this,
+                              QString("pigpiod Error"),
+                              QString("Unable to initialize GPIO%1 as Output")
+                                   .arg(gpioLEDpin));
+        return false;
+    }
+
+    iResult = set_pull_up_down(gpioHostHandle, gpioLEDpin, PI_PUD_UP);
+    if(iResult < 0) {
+        QMessageBox::critical(this,
+                              QString("pigpiod Error"),
+                              QString("Unable to set GPIO%1 Pull-Up")
+                                   .arg(gpioLEDpin));
+        return false;
+    }
+
+    iResult = set_PWM_frequency(gpioHostHandle, panPin, PWMfrequency);
+    if(iResult < 0) {
+        QMessageBox::critical(this,
+                              QString("pigpiod Error"),
+                              QString("Non riesco a definire la frequenza del PWM per il Pan."));
+        return false;
+    }
+    double pulseWidth = pulseWidthAt_90 +(pulseWidthAt90-pulseWidthAt_90)/180.0 * (cameraPanAngle+90.0);// In us
+    iResult = set_servo_pulsewidth(gpioHostHandle, panPin, u_int32_t(pulseWidth));
+    if(iResult < 0) {
+        QMessageBox::critical(this,
+                              QString("pigpiod Error"),
+                              QString("Non riesco a far partire il PWM per il Pan."));
+        return false;
+    }
+    set_PWM_frequency(gpioHostHandle, panPin, 0);
+
+    iResult = set_PWM_frequency(gpioHostHandle, tiltPin, PWMfrequency);
+    if(iResult < 0) {
+        QMessageBox::critical(this,
+                              QString("pigpiod Error"),
+                              QString("Non riesco a definire la frequenza del PWM per il Tilt."));
+        return false;
+    }
+    pulseWidth = pulseWidthAt_90 +(pulseWidthAt90-pulseWidthAt_90)/180.0 * (cameraTiltAngle+90.0);// In us
+    iResult = set_servo_pulsewidth(gpioHostHandle, tiltPin, u_int32_t(pulseWidth));
+    if(iResult < 0) {
+        QMessageBox::critical(this,
+                              QString("pigpiod Error"),
+                              QString("Non riesco a far partire il PWM per il Tilt."));
+        return false;
+    }
+    iResult = set_PWM_frequency(gpioHostHandle, tiltPin, 0);
+    if(iResult == PI_BAD_USER_GPIO) {
+        QMessageBox::critical(this,
+                              QString("pigpiod Error"),
+                              QString("Bad User GPIO"));
+        return false;
+    }
+    if(iResult == PI_NOT_PERMITTED) {
+        QMessageBox::critical(this,
+                              QString("pigpiod Error"),
+                              QString("GPIO operation not permitted"));
+        return false;
+    }
+#endif
+    return true;
 }
 
 

@@ -26,6 +26,7 @@ protected:
     void switchLampOn();
     void switchLampOff();
     bool checkValues();
+    bool gpioInit();
 
 public slots:
     void onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus);
