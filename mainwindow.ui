@@ -14,30 +14,186 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QLabel" name="lampStatus">
+   <widget class="QLabel" name="lampLabel">
     <property name="geometry">
      <rect>
-      <x>310</x>
-      <y>100</y>
+      <x>320</x>
+      <y>110</y>
+      <width>41</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Lamp</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="pathLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>71</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>File Path</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="pathEdit">
+    <property name="geometry">
+     <rect>
+      <x>90</x>
+      <y>30</y>
+      <width>301</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="nameEdit">
+    <property name="geometry">
+     <rect>
+      <x>90</x>
+      <y>70</y>
+      <width>301</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="nameLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>70</y>
+      <width>71</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>File Name</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="startButton">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>220</y>
+      <width>50</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Start</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="intervalLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>110</y>
       <width>67</width>
-      <height>17</height>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>T Interval</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="intervalEdit">
+    <property name="geometry">
+     <rect>
+      <x>90</x>
+      <y>110</y>
+      <width>91</width>
+      <height>25</height>
      </rect>
     </property>
     <property name="text">
      <string/>
     </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
    </widget>
-   <widget class="QLabel" name="labelLamp">
+   <widget class="QLabel" name="msLabel">
     <property name="geometry">
      <rect>
-      <x>260</x>
-      <y>100</y>
-      <width>41</width>
-      <height>17</height>
+      <x>190</x>
+      <y>110</y>
+      <width>21</width>
+      <height>25</height>
      </rect>
     </property>
     <property name="text">
-     <string>Lamp</string>
+     <string>ms</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="tTimeLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>150</y>
+      <width>67</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Tot. Time</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="msLabel_2">
+    <property name="geometry">
+     <rect>
+      <x>190</x>
+      <y>150</y>
+      <width>21</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>ms</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="tTimeEdit">
+    <property name="geometry">
+     <rect>
+      <x>90</x>
+      <y>150</y>
+      <width>91</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="stopButton">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>220</y>
+      <width>50</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Stop</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lampStatus">
+    <property name="geometry">
+     <rect>
+      <x>365</x>
+      <y>110</y>
+      <width>25</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>
@@ -50,14 +206,6 @@
      <height>22</height>
     </rect>
    </property>
-  </widget>
-  <widget class="QToolBar" name="mainToolBar">
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
  </widget>
