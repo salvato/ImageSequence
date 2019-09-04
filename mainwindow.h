@@ -40,8 +40,12 @@ private slots:
     void on_tTimeEdit_textEdited(const QString &arg1);
     void on_tTimeEdit_editingFinished();
     void onTimeToGetNewImage();
-
     void on_stopButton_clicked();
+    void on_pathEdit_textChanged(const QString &arg1);
+
+    void on_pathEdit_editingFinished();
+
+    void on_nameEdit_textChanged(const QString &arg1);
 
 private:
     Ui::MainWindow* pUi;

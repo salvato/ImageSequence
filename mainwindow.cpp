@@ -9,6 +9,7 @@
 #include <QSettings>
 #include <QThread>
 #include <QDebug>
+#include <QDir>
 
 
 #define MIN_INTERVAL 3000 // in ms (depends on the image format: jpeg is HW accelerated !)
@@ -240,6 +241,9 @@ MainWindow::switchLampOff() {
 
 bool
 MainWindow::checkValues() {
+    QDir dir(sBaseDir);
+    if(!dir.exists())
+        return false;
     return true;
 }
 
@@ -281,7 +285,7 @@ MainWindow::on_startButton_clicked() {
                       .arg(sOutFileName));
 
 ////////////////////////////////////////////////////////////
-/// Here we could use the following (not working at present)
+/// Here we could use the following (Not working at present)
 //    pImageRecorder->setProgram(sCommand);
 //    pImageRecorder->setArguments(sArguments);
 //    pImageRecorder->start();
@@ -411,4 +415,28 @@ MainWindow::onTimeToGetNewImage() {
     }
     QThread::msleep(300);
     switchLampOff();
+}
+
+
+void
+MainWindow::on_pathEdit_textChanged(const QString &arg1) {
+    QDir dir(arg1);
+    if(!dir.exists()) {
+        pUi->pathEdit->setStyleSheet(sErrorStyle);
+    }
+    else {
+        pUi->pathEdit->setStyleSheet(sNormalStyle);
+    }
+}
+
+
+void
+MainWindow::on_pathEdit_editingFinished() {
+    sBaseDir = pUi->pathEdit->text();
+}
+
+
+void
+MainWindow::on_nameEdit_textChanged(const QString &arg1) {
+    sOutFileName = arg1;
 }
