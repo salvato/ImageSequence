@@ -30,6 +30,8 @@ protected:
 
 public slots:
     void onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus);
+    void onImageRecorderStarted();
+    void onImageRecorderError(QProcess::ProcessError error);
 
 private slots:
     void on_startButton_clicked();

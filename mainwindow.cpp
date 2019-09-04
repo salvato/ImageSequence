@@ -12,6 +12,7 @@
 
 
 #define MIN_INTERVAL 3000 // in ms (depends on the image format: jpeg is HW accelerated !)
+#define IMAGE_QUALITY 100
 
 
 // GPIO Numbers are Broadcom (BCM) numbers
@@ -250,15 +251,6 @@ MainWindow::on_startButton_clicked() {
         return;
     }
     imageNum = 0;
-    QString sCommand = QString("raspistill -s ");
-    sCommand += QString("-n ");// No preview
-    sCommand += QString("-ex auto ");// Exposure mode; Auto
-    sCommand += QString("-awb auto ");// White Balance; Auto
-//    sCommand += QString("-awb fluorescent ");// White Balance; Fluorescent tube
-    sCommand += QString("-drc off ");// Dynamic Range Compression: off
-    sCommand += QString("-q 100 ");// JPEG quality: 100=max
-    sCommand += QString("-t %1 ").arg(0);
-    sCommand += QString("-o %1/%2_%04d.jpg").arg(sBaseDir).arg(sOutFileName);
 
 #if defined(Q_PROCESSOR_ARM)
     pImageRecorder = new QProcess(this);
@@ -266,26 +258,41 @@ MainWindow::on_startButton_clicked() {
             SIGNAL(finished(int, QProcess::ExitStatus)),
             this,
             SLOT(onImageRecorderClosed(int, QProcess::ExitStatus)));
+    connect(pImageRecorder,
+            SIGNAL(errorOccurred(QProcess::ProcessError)),
+            this,
+            SLOT(onImageRecorderError(QProcess::ProcessError)));
+    connect(pImageRecorder,
+            SIGNAL(started()),
+            this,
+            SLOT(onImageRecorderStarted()));
+    QString sCommand = QString("/usr/bin/raspistill");
+    QStringList sArguments = QStringList();
+    sArguments.append("-s");// Acquire on receiving a SIGNAL
+    sArguments.append(QString("-n"));// No preview
+    sArguments.append(QString("-ex auto"));// Exposure mode; Auto
+    sArguments.append(QString("-awb auto"));// White Balance; Auto
+    sArguments.append(QString("-drc off"));// Dynamic Range Compression: off
+    sArguments.append(QString("-q %1").arg(IMAGE_QUALITY));// JPEG quality: 100=max
+    sArguments.append(QString("-t %1 ").arg(msecTotTime));
+    sArguments.append(QString("-o %1/%2_%04d.jpg").arg(sBaseDir).arg(sOutFileName));
+
+/// Here we could use the following (not working at present)
+//    pImageRecorder->setProgram(sCommand);
+//    pImageRecorder->setArguments(sArguments);
+//    pImageRecorder->start();
+/// Instead we have to use:
+    for(int i=0; i<sArguments.size(); i++)
+        sCommand += QString(" %1").arg(sArguments[i]);
     pImageRecorder->start(sCommand);
-    if(!pImageRecorder->waitForStarted(3000)) {
-        pUi->statusBar->showMessage(QString("Non riesco ad eseguire 'raspistill'."));
-        pImageRecorder->terminate();
-        delete pImageRecorder;
-        pImageRecorder = nullptr;
-        return;
-    }
-    pid = pid_t(pImageRecorder->processId());
 #endif
 
-//    pUi->statusBar->showMessage(sCommand);
     QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
     for(int i=0; i<widgets.size(); i++) {
         widgets[i]->setDisabled(true);
     }
     pUi->startButton->setDisabled(true);
     pUi->stopButton->setEnabled(true);
-    onTimeToGetNewImage();
-    intervalTimer.start(msecInterval);
 }
 
 
@@ -297,11 +304,52 @@ MainWindow::on_stopButton_clicked() {
         if(iErr == -1) {
             pUi->statusBar->showMessage(QString("Error %1 in sending SIGKILL signal").arg(iErr));
         }
-        pImageRecorder->close();
-        pImageRecorder->waitForFinished(3000);
-        pImageRecorder->deleteLater();
-        pImageRecorder = nullptr;
     }
+    else {
+        switchLampOff();
+        QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
+        for(int i=0; i<widgets.size(); i++) {
+            widgets[i]->setEnabled(true);
+        }
+        pUi->startButton->setEnabled(true);
+        pUi->stopButton->setDisabled(true);
+    }
+}
+
+
+void
+MainWindow::onImageRecorderStarted() {
+    pid = pid_t(pImageRecorder->processId());
+    if(pid != 0) {
+        intervalTimer.start(msecInterval);
+    }
+}
+
+
+void
+MainWindow::onImageRecorderError(QProcess::ProcessError error) {
+    pUi->statusBar->showMessage(QString("raspistill Error %1").arg(error));
+    switchLampOff();
+    QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
+    for(int i=0; i<widgets.size(); i++) {
+        widgets[i]->setEnabled(true);
+    }
+    pUi->startButton->setEnabled(true);
+    pUi->stopButton->setDisabled(true);
+}
+
+
+void
+MainWindow::onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus) {
+    Q_UNUSED(exitCode)
+    Q_UNUSED(exitStatus)
+    intervalTimer.stop();
+    pImageRecorder->disconnect();
+    pImageRecorder->deleteLater();
+    pImageRecorder = nullptr;
+//    pUi->statusBar->showMessage(QString("raspistill exited with status: %1, Exit code: %2")
+//                                .arg(exitStatus)
+//                                .arg(exitCode));
     switchLampOff();
     QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
     for(int i=0; i<widgets.size(); i++) {
@@ -345,13 +393,6 @@ void
 MainWindow::on_tTimeEdit_editingFinished() {
     pUi->tTimeEdit->setText(QString("%1").arg(msecTotTime));
     pUi->tTimeEdit->setStyleSheet(sNormalStyle);
-}
-
-
-void
-MainWindow::onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus) {
-    Q_UNUSED(exitCode);
-    Q_UNUSED(exitStatus);
 }
 
 
