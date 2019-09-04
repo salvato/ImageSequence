@@ -47,6 +47,24 @@ MainWindow::MainWindow(QWidget *parent)
 
     restoreSettings();
 
+    // Setup the QLineEdit styles
+    sNormalStyle = pUi->lampStatus->styleSheet();
+    sErrorStyle  = "QLineEdit { \
+                        color: rgb(255, 255, 255); \
+                        background: rgb(255, 0, 0); \
+                        selection-background-color: rgb(128, 128, 255); \
+                    }";
+    sDarkStyle   = "QLineEdit { \
+                        color: rgb(255, 255, 255); \
+                        background: rgb(0, 0, 0); \
+                        selection-background-color: rgb(128, 128, 255); \
+                    }";
+    sPhotoStyle  = "QLineEdit { \
+                        color: rgb(0, 0, 0); \
+                        background: rgb(255, 255, 0); \
+                        selection-background-color: rgb(128, 128, 255); \
+                    }";
+
     // Init GPIOs
     if(!gpioInit())
         exit(EXIT_FAILURE);
@@ -81,6 +99,7 @@ MainWindow::closeEvent(QCloseEvent *event) {
         pImageRecorder = nullptr;
     }
     switchLampOff();
+    // Save settings
     QSettings settings;
     settings.setValue("mainWindowGeometry", saveGeometry());
     settings.setValue("mainWindowState", saveState());
@@ -109,24 +128,6 @@ MainWindow::restoreSettings() {
     secTotTime      = settings.value("TotalTime", 0).toInt();
     cameraPanAngle  = settings.value("panAngle",  0.0).toDouble();
     cameraTiltAngle = settings.value("tiltAngle", 0.0).toDouble();
-
-    // Setup the QLineEdit styles
-    sNormalStyle = pUi->lampStatus->styleSheet();
-    sErrorStyle  = "QLineEdit { \
-                        color: rgb(255, 255, 255); \
-                        background: rgb(255, 0, 0); \
-                        selection-background-color: rgb(128, 128, 255); \
-                    }";
-    sDarkStyle   = "QLineEdit { \
-                        color: rgb(255, 255, 255); \
-                        background: rgb(0, 0, 0); \
-                        selection-background-color: rgb(128, 128, 255); \
-                    }";
-    sPhotoStyle  = "QLineEdit { \
-                        color: rgb(0, 0, 0); \
-                        background: rgb(255, 255, 0); \
-                        selection-background-color: rgb(128, 128, 255); \
-                    }";
 
     // Restore Geometry and State of the window
     restoreGeometry(settings.value("mainWindowGeometry").toByteArray());
