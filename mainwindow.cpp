@@ -13,7 +13,7 @@
 
 
 #define MIN_INTERVAL 3000 // in ms (depends on the image format: jpeg is HW accelerated !)
-#define IMAGE_QUALITY 100 // 100 is Max quality
+#define IMAGE_QUALITY 100 // 100 is Best quality
 
 
 // GPIO Numbers are Broadcom (BCM) numbers
@@ -92,7 +92,7 @@ MainWindow::closeEvent(QCloseEvent *event) {
     Q_UNUSED(event)
     intervalTimer.stop();
     if(pImageRecorder) {
-        kill(pid, SIGTERM);
+        kill(pid, SIGINT);
         pImageRecorder->close();
         pImageRecorder->waitForFinished(3000);
         pImageRecorder->deleteLater();
@@ -284,15 +284,15 @@ MainWindow::onImageRecorderError(QProcess::ProcessError error) {
 
 void
 MainWindow::onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus) {
-    Q_UNUSED(exitCode)
-    Q_UNUSED(exitStatus)
     intervalTimer.stop();
     pImageRecorder->disconnect();
     pImageRecorder->deleteLater();
     pImageRecorder = nullptr;
-//    pUi->statusBar->showMessage(QString("raspistill exited with status: %1, Exit code: %2")
-//                                .arg(exitStatus)
-//                                .arg(exitCode));
+    if(exitCode != 130) {// exitStatus==130 means process killed by Ctrl-C
+        pUi->statusBar->showMessage(QString("raspistill exited with status: %1, Exit code: %2")
+                                    .arg(exitStatus)
+                                    .arg(exitCode));
+    }
     switchLampOff();
     QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
     for(int i=0; i<widgets.size(); i++) {
@@ -331,13 +331,14 @@ MainWindow::on_startButton_clicked() {
 
     QString sCommand = QString("/usr/bin/raspistill");
     QStringList sArguments = QStringList();
-    sArguments.append(QString("-s"));                        // Acquire upon receiving a SIGNAL
+    sArguments.append(QString("-s"));                        // Acquire upon receiving a SIGUSR1 signal
     sArguments.append(QString("-n"));                        // No preview
     sArguments.append(QString("-ex auto"));                  // Exposure mode; Auto
     sArguments.append(QString("-awb auto"));                 // White Balance; Auto
     sArguments.append(QString("-drc off"));                  // Dynamic Range Compression: off
     sArguments.append(QString("-q %1").arg(IMAGE_QUALITY));  // JPEG quality: 100=max
     sArguments.append(QString("-t %1").arg(secTotTime*1000));// Acquisition Time(0= No limit)
+    sArguments.append(QString("-p 0,0,320,240"));
     sArguments.append(QString("-o %1/%2_%04d.jpg")           // File name(s)
                       .arg(sBaseDir)
                       .arg(sOutFileName));
@@ -351,6 +352,7 @@ MainWindow::on_startButton_clicked() {
     for(int i=0; i<sArguments.size(); i++)
         sCommand += QString(" %1").arg(sArguments[i]);
     pImageRecorder->start(sCommand);
+    qDebug() << sCommand;
 ////////////////////////////////////////////////////////////
 #endif
 
@@ -367,13 +369,13 @@ void
 MainWindow::on_stopButton_clicked() {
     intervalTimer.stop();
     if(pImageRecorder) {
-        disconnect(pImageRecorder,// To avoid a "process crashed" error
-                   SIGNAL(errorOccurred(QProcess::ProcessError)),
-                   nullptr,
-                   nullptr);
-        int iErr = kill(pid, SIGTERM);
+//        disconnect(pImageRecorder,// To avoid a "process crashed" error
+//                   SIGNAL(errorOccurred(QProcess::ProcessError)),
+//                   nullptr,
+//                   nullptr);
+        int iErr = kill(pid, SIGINT);
         if(iErr == -1) {
-            pUi->statusBar->showMessage(QString("Error %1 in sending SIGTERM signal").arg(iErr));
+            pUi->statusBar->showMessage(QString("Error %1 in sending SIGINT signal").arg(iErr));
         }
     }
     else {
