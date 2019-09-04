@@ -12,6 +12,8 @@
 
 
 #define MIN_INTERVAL 3000 // in ms (depends on the image format: jpeg is HW accelerated !
+
+
 // GPIO Numbers are Broadcom (BCM) numbers
 #define LED_PIN  23 // BCM23 is Pin 16 in the 40 pin GPIO connector.
 #define PAN_PIN  14 // BCM14 is Pin  8 in the 40 pin GPIO connector.
@@ -24,8 +26,6 @@ MainWindow::MainWindow(QWidget *parent)
     , pImageRecorder(Q_NULLPTR)
     // ================================================
     // GPIO Numbers are Broadcom (BCM) numbers
-    // For Raspberry Pi GPIO pin numbering see
-    // https://pinout.xyz/
     // ================================================
     // +5V on pins 2 or 4 in the 40 pin GPIO connector.
     // GND on pins 6, 9, 14, 20, 25, 30, 34 or 39
