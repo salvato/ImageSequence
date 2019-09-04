@@ -266,17 +266,21 @@ MainWindow::on_startButton_clicked() {
             SIGNAL(started()),
             this,
             SLOT(onImageRecorderStarted()));
+
     QString sCommand = QString("/usr/bin/raspistill");
     QStringList sArguments = QStringList();
-    sArguments.append("-s");// Acquire on receiving a SIGNAL
-    sArguments.append(QString("-n"));// No preview
-    sArguments.append(QString("-ex auto"));// Exposure mode; Auto
-    sArguments.append(QString("-awb auto"));// White Balance; Auto
-    sArguments.append(QString("-drc off"));// Dynamic Range Compression: off
+    sArguments.append(QString("-s"));                      // Acquire upon receiving a SIGNAL
+    sArguments.append(QString("-n"));                      // No preview
+    sArguments.append(QString("-ex auto"));                // Exposure mode; Auto
+    sArguments.append(QString("-awb auto"));               // White Balance; Auto
+    sArguments.append(QString("-drc off"));                // Dynamic Range Compression: off
     sArguments.append(QString("-q %1").arg(IMAGE_QUALITY));// JPEG quality: 100=max
-    sArguments.append(QString("-t %1 ").arg(msecTotTime));
-    sArguments.append(QString("-o %1/%2_%04d.jpg").arg(sBaseDir).arg(sOutFileName));
+    sArguments.append(QString("-t %1").arg(msecTotTime));  // Acquisition Time(0= No limit)
+    sArguments.append(QString("-o %1/%2_%04d.jpg")         // File name(s)
+                      .arg(sBaseDir)
+                      .arg(sOutFileName));
 
+////////////////////////////////////////////////////////////
 /// Here we could use the following (not working at present)
 //    pImageRecorder->setProgram(sCommand);
 //    pImageRecorder->setArguments(sArguments);
@@ -285,6 +289,7 @@ MainWindow::on_startButton_clicked() {
     for(int i=0; i<sArguments.size(); i++)
         sCommand += QString(" %1").arg(sArguments[i]);
     pImageRecorder->start(sCommand);
+////////////////////////////////////////////////////////////
 #endif
 
     QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
