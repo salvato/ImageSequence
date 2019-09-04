@@ -249,6 +249,52 @@ MainWindow::checkValues() {
 
 
 void
+MainWindow::onImageRecorderStarted() {
+    pid = pid_t(pImageRecorder->processId());
+    if(pid != 0) {
+        intervalTimer.start(msecInterval);
+    }
+}
+
+
+void
+MainWindow::onImageRecorderError(QProcess::ProcessError error) {
+    pUi->statusBar->showMessage(QString("raspistill Error %1").arg(error));
+    switchLampOff();
+    QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
+    for(int i=0; i<widgets.size(); i++) {
+        widgets[i]->setEnabled(true);
+    }
+    pUi->startButton->setEnabled(true);
+    pUi->stopButton->setDisabled(true);
+}
+
+
+void
+MainWindow::onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus) {
+    Q_UNUSED(exitCode)
+    Q_UNUSED(exitStatus)
+    intervalTimer.stop();
+    pImageRecorder->disconnect();
+    pImageRecorder->deleteLater();
+    pImageRecorder = nullptr;
+//    pUi->statusBar->showMessage(QString("raspistill exited with status: %1, Exit code: %2")
+//                                .arg(exitStatus)
+//                                .arg(exitCode));
+    switchLampOff();
+    QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
+    for(int i=0; i<widgets.size(); i++) {
+        widgets[i]->setEnabled(true);
+    }
+    pUi->startButton->setEnabled(true);
+    pUi->stopButton->setDisabled(true);
+}
+
+
+///\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+/// UI event handlers <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//////////////////////////////////////////////////////////////
+void
 MainWindow::on_startButton_clicked() {
     if(!checkValues()) {
         pUi->statusBar->showMessage((QString("Error: Check Values !")));
@@ -327,49 +373,6 @@ MainWindow::on_stopButton_clicked() {
 
 
 void
-MainWindow::onImageRecorderStarted() {
-    pid = pid_t(pImageRecorder->processId());
-    if(pid != 0) {
-        intervalTimer.start(msecInterval);
-    }
-}
-
-
-void
-MainWindow::onImageRecorderError(QProcess::ProcessError error) {
-    pUi->statusBar->showMessage(QString("raspistill Error %1").arg(error));
-    switchLampOff();
-    QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
-    for(int i=0; i<widgets.size(); i++) {
-        widgets[i]->setEnabled(true);
-    }
-    pUi->startButton->setEnabled(true);
-    pUi->stopButton->setDisabled(true);
-}
-
-
-void
-MainWindow::onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus) {
-    Q_UNUSED(exitCode)
-    Q_UNUSED(exitStatus)
-    intervalTimer.stop();
-    pImageRecorder->disconnect();
-    pImageRecorder->deleteLater();
-    pImageRecorder = nullptr;
-//    pUi->statusBar->showMessage(QString("raspistill exited with status: %1, Exit code: %2")
-//                                .arg(exitStatus)
-//                                .arg(exitCode));
-    switchLampOff();
-    QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
-    for(int i=0; i<widgets.size(); i++) {
-        widgets[i]->setEnabled(true);
-    }
-    pUi->startButton->setEnabled(true);
-    pUi->stopButton->setDisabled(true);
-}
-
-
-void
 MainWindow::on_intervalEdit_textEdited(const QString &arg1) {
     if(arg1.toInt() < MIN_INTERVAL) {
         pUi->intervalEdit->setStyleSheet(sErrorStyle);
@@ -404,20 +407,6 @@ MainWindow::on_tTimeEdit_editingFinished() {
     pUi->tTimeEdit->setStyleSheet(sNormalStyle);
 }
 
-
-void
-MainWindow::onTimeToGetNewImage() {
-    switchLampOn();
-    QThread::msleep(300);
-    int iErr = kill(pid, SIGUSR1);
-    if(iErr == -1) {
-        pUi->statusBar->showMessage(QString("Error %1 in sending SIGUSR1 signal").arg(iErr));
-    }
-    QThread::msleep(300);
-    switchLampOff();
-}
-
-
 void
 MainWindow::on_pathEdit_textChanged(const QString &arg1) {
     QDir dir(arg1);
@@ -440,3 +429,21 @@ void
 MainWindow::on_nameEdit_textChanged(const QString &arg1) {
     sOutFileName = arg1;
 }
+
+
+///\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+/// Acquisition timer handler <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//////////////////////////////////////////////////////////////
+void
+MainWindow::onTimeToGetNewImage() {
+    switchLampOn();
+    QThread::msleep(300);
+    int iErr = kill(pid, SIGUSR1);
+    if(iErr == -1) {
+        pUi->statusBar->showMessage(QString("Error %1 in sending SIGUSR1 signal").arg(iErr));
+    }
+    QThread::msleep(300);
+    switchLampOff();
+}
+
+
