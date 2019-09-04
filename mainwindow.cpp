@@ -11,7 +11,7 @@
 #include <QDebug>
 
 
-#define MIN_INTERVAL 3000 // in ms (depends on the image format: jpeg is HW accelerated !
+#define MIN_INTERVAL 3000 // in ms (depends on the image format: jpeg is HW accelerated !)
 
 
 // GPIO Numbers are Broadcom (BCM) numbers
