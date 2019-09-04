@@ -92,7 +92,7 @@ MainWindow::closeEvent(QCloseEvent *event) {
     Q_UNUSED(event)
     intervalTimer.stop();
     if(pImageRecorder) {
-        kill(pid, SIGINT);
+        pImageRecorder->terminate();
         pImageRecorder->close();
         pImageRecorder->waitForFinished(3000);
         pImageRecorder->deleteLater();
@@ -147,6 +147,7 @@ MainWindow::gpioInit() {
                               QString("Non riesco ad inizializzare la GPIO."));
         return false;
     }
+    // Led On/Off Control
     iResult = set_mode(gpioHostHandle, gpioLEDpin, PI_OUTPUT);
     if(iResult < 0) {
         QMessageBox::critical(this,
@@ -164,7 +165,7 @@ MainWindow::gpioInit() {
                                    .arg(gpioLEDpin));
         return false;
     }
-
+    // Camera Pan-Tilt Control
     iResult = set_PWM_frequency(gpioHostHandle, panPin, PWMfrequency);
     if(iResult < 0) {
         QMessageBox::critical(this,
@@ -224,7 +225,7 @@ MainWindow::switchLampOn() {
         QMessageBox::critical(this,
                               QString("pigpiod Error"),
                               QString("Unable to set GPIO%1 On")
-                                   .arg(gpioLEDpin));
+                              .arg(gpioLEDpin));
 #endif
     pUi->lampStatus->setStyleSheet(sPhotoStyle);
     repaint();
@@ -240,7 +241,7 @@ MainWindow::switchLampOff() {
         QMessageBox::critical(this,
                               QString("pigpiod Error"),
                               QString("Unable to set GPIO%1 Off")
-                                   .arg(gpioLEDpin));
+                              .arg(gpioLEDpin));
 #endif
     pUi->lampStatus->setStyleSheet(sDarkStyle);
     repaint();
@@ -271,7 +272,8 @@ MainWindow::onImageRecorderStarted() {
 void
 MainWindow::onImageRecorderError(QProcess::ProcessError error) {
     Q_UNUSED(error)
-    pUi->statusBar->showMessage(QString("raspistill Error %1").arg(error), 1000);
+    pUi->statusBar->showMessage(QString("raspistill Error %1")
+                                .arg(error), 1000);
     switchLampOff();
     QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
     for(int i=0; i<widgets.size(); i++) {
@@ -291,7 +293,7 @@ MainWindow::onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus)
     if(exitCode != 130) {// exitStatus==130 means process killed by Ctrl-C
         pUi->statusBar->showMessage(QString("raspistill exited with status: %1, Exit code: %2")
                                     .arg(exitStatus)
-                                    .arg(exitCode));
+                                    .arg(exitCode), 2000);
     }
     switchLampOff();
     QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
@@ -337,7 +339,7 @@ MainWindow::on_startButton_clicked() {
     sArguments.append(QString("-awb auto"));                 // White Balance; Auto
     sArguments.append(QString("-drc off"));                  // Dynamic Range Compression: off
     sArguments.append(QString("-q %1").arg(IMAGE_QUALITY));  // JPEG quality: 100=max
-    sArguments.append(QString("-t %1").arg(secTotTime*1000));// Acquisition Time(0= No limit)
+    sArguments.append(QString("-t %1").arg(secTotTime*1000));// Acquisition Time(0 = No limit)
     sArguments.append(QString("-p 0,0,320,240"));
     sArguments.append(QString("-o %1/%2_%04d.jpg")           // File name(s)
                       .arg(sBaseDir)
@@ -352,7 +354,6 @@ MainWindow::on_startButton_clicked() {
     for(int i=0; i<sArguments.size(); i++)
         sCommand += QString(" %1").arg(sArguments[i]);
     pImageRecorder->start(sCommand);
-    qDebug() << sCommand;
 ////////////////////////////////////////////////////////////
 #endif
 
@@ -369,14 +370,7 @@ void
 MainWindow::on_stopButton_clicked() {
     intervalTimer.stop();
     if(pImageRecorder) {
-//        disconnect(pImageRecorder,// To avoid a "process crashed" error
-//                   SIGNAL(errorOccurred(QProcess::ProcessError)),
-//                   nullptr,
-//                   nullptr);
-        int iErr = kill(pid, SIGINT);
-        if(iErr == -1) {
-            pUi->statusBar->showMessage(QString("Error %1 in sending SIGINT signal").arg(iErr));
-        }
+        kill(pid, SIGINT);
     }
     else {
         switchLampOff();
@@ -458,7 +452,8 @@ MainWindow::onTimeToGetNewImage() {
     QThread::msleep(300);
     int iErr = kill(pid, SIGUSR1);
     if(iErr == -1) {
-        pUi->statusBar->showMessage(QString("Error %1 in sending SIGUSR1 signal").arg(iErr));
+        pUi->statusBar->showMessage(QString("Error %1 in sending SIGUSR1 signal")
+                                    .arg(iErr), 2000);
     }
     QThread::msleep(300);
     switchLampOff();
