@@ -14,19 +14,6 @@
    <string>Image Sequence Recorder</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QLabel" name="lampLabel">
-    <property name="geometry">
-     <rect>
-      <x>320</x>
-      <y>110</y>
-      <width>41</width>
-      <height>25</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Lamp</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="pathLabel">
     <property name="geometry">
      <rect>
@@ -120,7 +107,7 @@
      <rect>
       <x>190</x>
       <y>110</y>
-      <width>21</width>
+      <width>31</width>
       <height>25</height>
      </rect>
     </property>
@@ -141,17 +128,17 @@
      <string>Tot. Time</string>
     </property>
    </widget>
-   <widget class="QLabel" name="msLabel_2">
+   <widget class="QLabel" name="sLabel">
     <property name="geometry">
      <rect>
       <x>190</x>
       <y>150</y>
-      <width>21</width>
+      <width>31</width>
       <height>25</height>
      </rect>
     </property>
     <property name="text">
-     <string>ms</string>
+     <string>sec</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="tTimeEdit">
@@ -186,26 +173,22 @@
    <widget class="QLineEdit" name="lampStatus">
     <property name="geometry">
      <rect>
-      <x>365</x>
+      <x>230</x>
       <y>110</y>
       <width>25</width>
       <height>25</height>
      </rect>
     </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
+    </property>
+    <property name="frame">
+     <bool>false</bool>
+    </property>
     <property name="readOnly">
      <bool>true</bool>
     </property>
    </widget>
-  </widget>
-  <widget class="QMenuBar" name="menuBar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>400</width>
-     <height>28</height>
-    </rect>
-   </property>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
  </widget>

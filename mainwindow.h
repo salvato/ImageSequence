@@ -64,7 +64,7 @@ private:
     int    gpioHostHandle;
 
     int    msecInterval;
-    int    msecTotTime;
+    int    secTotTime;
     int    imageNum;
 
     QString sNormalStyle;

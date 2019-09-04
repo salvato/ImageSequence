@@ -13,7 +13,7 @@
 
 
 #define MIN_INTERVAL 3000 // in ms (depends on the image format: jpeg is HW accelerated !)
-#define IMAGE_QUALITY 100
+#define IMAGE_QUALITY 100 // 100 is Max quality
 
 
 // GPIO Numbers are Broadcom (BCM) numbers
@@ -52,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     sOutFileName = settings.value("FileName",
                                   QString("test")).toString();
     msecInterval = settings.value("Interval", 10000).toInt();
-    msecTotTime = settings.value("TotalTime", 0).toInt();
+    secTotTime = settings.value("TotalTime", 0).toInt();
     cameraPanAngle  = settings.value("panAngle",  0.0).toDouble();
     cameraTiltAngle = settings.value("tiltAngle", 0.0).toDouble();
 
@@ -90,7 +90,7 @@ MainWindow::MainWindow(QWidget *parent)
     pUi->startButton->setEnabled(true);
     pUi->stopButton->setDisabled(true);
     pUi->intervalEdit->setText(QString("%1").arg(msecInterval));
-    pUi->tTimeEdit->setText(QString("%1").arg(msecTotTime));
+    pUi->tTimeEdit->setText(QString("%1").arg(secTotTime));
 
     intervalTimer.stop();// Probably non needed but...does'nt hurt
     connect(&intervalTimer,
@@ -105,7 +105,7 @@ MainWindow::closeEvent(QCloseEvent *event) {
     Q_UNUSED(event)
     intervalTimer.stop();
     if(pImageRecorder) {
-        kill(pid, SIGKILL);
+        kill(pid, SIGTERM);
         pImageRecorder->close();
         pImageRecorder->waitForFinished(3000);
         pImageRecorder->deleteLater();
@@ -118,7 +118,7 @@ MainWindow::closeEvent(QCloseEvent *event) {
     settings.setValue("BaseDir", sBaseDir);
     settings.setValue("FileName", sOutFileName);
     settings.setValue("Interval", msecInterval);
-    settings.setValue("TotalTime", msecTotTime);
+    settings.setValue("TotalTime", secTotTime);
     settings.setValue("panAngle",  cameraPanAngle);
     settings.setValue("tiltAngle", cameraTiltAngle);
 #if defined(Q_PROCESSOR_ARM)
@@ -248,6 +248,9 @@ MainWindow::checkValues() {
 }
 
 
+//////////////////////////////////////////////////////////////
+/// Process event handlers <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+//////////////////////////////////////////////////////////////
 void
 MainWindow::onImageRecorderStarted() {
     pid = pid_t(pImageRecorder->processId());
@@ -259,7 +262,8 @@ MainWindow::onImageRecorderStarted() {
 
 void
 MainWindow::onImageRecorderError(QProcess::ProcessError error) {
-    pUi->statusBar->showMessage(QString("raspistill Error %1").arg(error));
+    Q_UNUSED(error)
+    pUi->statusBar->showMessage(QString("raspistill Error %1").arg(error), 1000);
     switchLampOff();
     QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
     for(int i=0; i<widgets.size(); i++) {
@@ -291,7 +295,7 @@ MainWindow::onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus)
 }
 
 
-///\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+//////////////////////////////////////////////////////////////
 /// UI event handlers <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 //////////////////////////////////////////////////////////////
 void
@@ -319,14 +323,14 @@ MainWindow::on_startButton_clicked() {
 
     QString sCommand = QString("/usr/bin/raspistill");
     QStringList sArguments = QStringList();
-    sArguments.append(QString("-s"));                      // Acquire upon receiving a SIGNAL
-    sArguments.append(QString("-n"));                      // No preview
-    sArguments.append(QString("-ex auto"));                // Exposure mode; Auto
-    sArguments.append(QString("-awb auto"));               // White Balance; Auto
-    sArguments.append(QString("-drc off"));                // Dynamic Range Compression: off
-    sArguments.append(QString("-q %1").arg(IMAGE_QUALITY));// JPEG quality: 100=max
-    sArguments.append(QString("-t %1").arg(msecTotTime));  // Acquisition Time(0= No limit)
-    sArguments.append(QString("-o %1/%2_%04d.jpg")         // File name(s)
+    sArguments.append(QString("-s"));                        // Acquire upon receiving a SIGNAL
+    sArguments.append(QString("-n"));                        // No preview
+    sArguments.append(QString("-ex auto"));                  // Exposure mode; Auto
+    sArguments.append(QString("-awb auto"));                 // White Balance; Auto
+    sArguments.append(QString("-drc off"));                  // Dynamic Range Compression: off
+    sArguments.append(QString("-q %1").arg(IMAGE_QUALITY));  // JPEG quality: 100=max
+    sArguments.append(QString("-t %1").arg(secTotTime*1000));// Acquisition Time(0= No limit)
+    sArguments.append(QString("-o %1/%2_%04d.jpg")           // File name(s)
                       .arg(sBaseDir)
                       .arg(sOutFileName));
 
@@ -355,9 +359,13 @@ void
 MainWindow::on_stopButton_clicked() {
     intervalTimer.stop();
     if(pImageRecorder) {
-        int iErr = kill(pid, SIGKILL);
+        disconnect(pImageRecorder,// To avoid a "process crashed" error
+                   SIGNAL(errorOccurred(QProcess::ProcessError)),
+                   nullptr,
+                   nullptr);
+        int iErr = kill(pid, SIGTERM);
         if(iErr == -1) {
-            pUi->statusBar->showMessage(QString("Error %1 in sending SIGKILL signal").arg(iErr));
+            pUi->statusBar->showMessage(QString("Error %1 in sending SIGTERM signal").arg(iErr));
         }
     }
     else {
@@ -393,17 +401,17 @@ MainWindow::on_intervalEdit_editingFinished() {
 void
 MainWindow::on_tTimeEdit_textEdited(const QString &arg1) {
     if(arg1.toInt() < 0) {
-        msecTotTime = arg1.toInt();
-        pUi->tTimeEdit->setStyleSheet(sNormalStyle);
-    } else {
         pUi->tTimeEdit->setStyleSheet(sErrorStyle);
+    } else {
+        secTotTime = arg1.toInt();
+        pUi->tTimeEdit->setStyleSheet(sNormalStyle);
     }
 }
 
 
 void
 MainWindow::on_tTimeEdit_editingFinished() {
-    pUi->tTimeEdit->setText(QString("%1").arg(msecTotTime));
+    pUi->tTimeEdit->setText(QString("%1").arg(secTotTime));
     pUi->tTimeEdit->setStyleSheet(sNormalStyle);
 }
 
@@ -431,7 +439,7 @@ MainWindow::on_nameEdit_textChanged(const QString &arg1) {
 }
 
 
-///\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+//////////////////////////////////////////////////////////////
 /// Acquisition timer handler <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 //////////////////////////////////////////////////////////////
 void
