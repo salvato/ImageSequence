@@ -38,7 +38,6 @@ MainWindow::MainWindow(QWidget *parent)
     , tiltPin(TILT_PIN)
     , gpioHostHandle(-1)
 {
-    QSettings settings;
     pUi->setupUi(this);
 
     // Values to be checked with the used servos
@@ -46,37 +45,7 @@ MainWindow::MainWindow(QWidget *parent)
     pulseWidthAt_90 =  600.0; // in us
     pulseWidthAt90  = 2200.0; // in us
 
-    // Restore settings
-    sBaseDir     = settings.value("BaseDir",
-                                  QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)).toString();
-    sOutFileName = settings.value("FileName",
-                                  QString("test")).toString();
-    msecInterval = settings.value("Interval", 10000).toInt();
-    secTotTime = settings.value("TotalTime", 0).toInt();
-    cameraPanAngle  = settings.value("panAngle",  0.0).toDouble();
-    cameraTiltAngle = settings.value("tiltAngle", 0.0).toDouble();
-
-    // Setup the QLineEdit styles
-    sNormalStyle = pUi->lampStatus->styleSheet();
-    sErrorStyle  = "QLineEdit { \
-                        color: rgb(255, 255, 255); \
-                        background: rgb(255, 0, 0); \
-                        selection-background-color: rgb(128, 128, 255); \
-                    }";
-    sDarkStyle   = "QLineEdit { \
-                        color: rgb(255, 255, 255); \
-                        background: rgb(0, 0, 0); \
-                        selection-background-color: rgb(128, 128, 255); \
-                    }";
-    sPhotoStyle  = "QLineEdit { \
-                        color: rgb(0, 0, 0); \
-                        background: rgb(255, 255, 0); \
-                        selection-background-color: rgb(128, 128, 255); \
-                    }";
-
-    // Restore Geometry and State of the window
-    restoreGeometry(settings.value("mainWindowGeometry").toByteArray());
-    restoreState(settings.value("mainWindowState").toByteArray());
+    restoreSettings();
 
     // Init GPIOs
     if(!gpioInit())
@@ -126,6 +95,44 @@ MainWindow::closeEvent(QCloseEvent *event) {
         pigpio_stop(gpioHostHandle);
 #endif
 }
+
+
+void
+MainWindow::restoreSettings() {
+    QSettings settings;
+    // Restore settings
+    sBaseDir        = settings.value("BaseDir",
+                                     QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)).toString();
+    sOutFileName    = settings.value("FileName",
+                                     QString("test")).toString();
+    msecInterval    = settings.value("Interval", 10000).toInt();
+    secTotTime      = settings.value("TotalTime", 0).toInt();
+    cameraPanAngle  = settings.value("panAngle",  0.0).toDouble();
+    cameraTiltAngle = settings.value("tiltAngle", 0.0).toDouble();
+
+    // Setup the QLineEdit styles
+    sNormalStyle = pUi->lampStatus->styleSheet();
+    sErrorStyle  = "QLineEdit { \
+                        color: rgb(255, 255, 255); \
+                        background: rgb(255, 0, 0); \
+                        selection-background-color: rgb(128, 128, 255); \
+                    }";
+    sDarkStyle   = "QLineEdit { \
+                        color: rgb(255, 255, 255); \
+                        background: rgb(0, 0, 0); \
+                        selection-background-color: rgb(128, 128, 255); \
+                    }";
+    sPhotoStyle  = "QLineEdit { \
+                        color: rgb(0, 0, 0); \
+                        background: rgb(255, 255, 0); \
+                        selection-background-color: rgb(128, 128, 255); \
+                    }";
+
+    // Restore Geometry and State of the window
+    restoreGeometry(settings.value("mainWindowGeometry").toByteArray());
+    restoreState(settings.value("mainWindowState").toByteArray());
+}
+
 
 bool
 MainWindow::gpioInit() {

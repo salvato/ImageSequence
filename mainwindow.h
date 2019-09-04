@@ -22,6 +22,7 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
 
 protected:
+    void restoreSettings();
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
     void switchLampOn();
     void switchLampOff();
