@@ -3,6 +3,7 @@
 #if defined(Q_PROCESSOR_ARM)
     #include "pigpiod_if2.h"// The library for using GPIO pins on Raspberry
 #endif
+#include "setupdialog.h"
 #include <signal.h>
 #include <QMessageBox>
 #include <QStandardPaths>
@@ -385,6 +386,14 @@ MainWindow::on_stopButton_clicked() {
 
 
 void
+MainWindow::on_setupButton_clicked() {
+    setupDialog* pSetupDlg = new setupDialog();
+    pSetupDlg->exec();
+    pSetupDlg->deleteLater();
+}
+
+
+void
 MainWindow::on_intervalEdit_textEdited(const QString &arg1) {
     if(arg1.toInt() < MIN_INTERVAL) {
         pUi->intervalEdit->setStyleSheet(sErrorStyle);
@@ -418,6 +427,7 @@ MainWindow::on_tTimeEdit_editingFinished() {
     pUi->tTimeEdit->setText(QString("%1").arg(secTotTime));
     pUi->tTimeEdit->setStyleSheet(sNormalStyle);
 }
+
 
 void
 MainWindow::on_pathEdit_textChanged(const QString &arg1) {
@@ -458,5 +468,4 @@ MainWindow::onTimeToGetNewImage() {
     QThread::msleep(300);
     switchLampOff();
 }
-
 

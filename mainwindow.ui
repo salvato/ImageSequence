@@ -189,6 +189,19 @@
      <bool>true</bool>
     </property>
    </widget>
+   <widget class="QPushButton" name="setupButton">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>150</y>
+      <width>50</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Setup</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QStatusBar" name="statusBar">
    <property name="sizeGripEnabled">

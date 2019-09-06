@@ -43,10 +43,9 @@ private slots:
     void onTimeToGetNewImage();
     void on_stopButton_clicked();
     void on_pathEdit_textChanged(const QString &arg1);
-
     void on_pathEdit_editingFinished();
-
     void on_nameEdit_textChanged(const QString &arg1);
+    void on_setupButton_clicked();
 
 private:
     Ui::MainWindow* pUi;

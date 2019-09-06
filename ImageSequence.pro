@@ -16,12 +16,15 @@ DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs depr
 
 CONFIG += c++14
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    setupdialog.cpp
 SOURCES += mainwindow.cpp
 
-HEADERS += mainwindow.h
+HEADERS += mainwindow.h \
+    setupdialog.h
 
-FORMS += mainwindow.ui
+FORMS += mainwindow.ui \
+    setupdialog.ui
 
 contains(QMAKE_HOST.arch, "armv7l") || contains(QMAKE_HOST.arch, "armv6l"): {
     INCLUDEPATH += /usr/local/include
