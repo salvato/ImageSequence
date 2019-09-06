@@ -166,52 +166,6 @@ MainWindow::gpioInit() {
                                    .arg(gpioLEDpin));
         return false;
     }
-    // Camera Pan-Tilt Control
-    iResult = set_PWM_frequency(gpioHostHandle, panPin, PWMfrequency);
-    if(iResult < 0) {
-        QMessageBox::critical(this,
-                              QString("pigpiod Error"),
-                              QString("Non riesco a definire la frequenza del PWM per il Pan."));
-        return false;
-    }
-    double pulseWidth = pulseWidthAt_90 +(pulseWidthAt90-pulseWidthAt_90)/180.0 * (cameraPanAngle+90.0);// In us
-    iResult = set_servo_pulsewidth(gpioHostHandle, panPin, u_int32_t(pulseWidth));
-    if(iResult < 0) {
-        QMessageBox::critical(this,
-                              QString("pigpiod Error"),
-                              QString("Non riesco a far partire il PWM per il Pan."));
-        return false;
-    }
-    set_PWM_frequency(gpioHostHandle, panPin, 0);
-
-    iResult = set_PWM_frequency(gpioHostHandle, tiltPin, PWMfrequency);
-    if(iResult < 0) {
-        QMessageBox::critical(this,
-                              QString("pigpiod Error"),
-                              QString("Non riesco a definire la frequenza del PWM per il Tilt."));
-        return false;
-    }
-    pulseWidth = pulseWidthAt_90 +(pulseWidthAt90-pulseWidthAt_90)/180.0 * (cameraTiltAngle+90.0);// In us
-    iResult = set_servo_pulsewidth(gpioHostHandle, tiltPin, u_int32_t(pulseWidth));
-    if(iResult < 0) {
-        QMessageBox::critical(this,
-                              QString("pigpiod Error"),
-                              QString("Non riesco a far partire il PWM per il Tilt."));
-        return false;
-    }
-    iResult = set_PWM_frequency(gpioHostHandle, tiltPin, 0);
-    if(iResult == PI_BAD_USER_GPIO) {
-        QMessageBox::critical(this,
-                              QString("pigpiod Error"),
-                              QString("Bad User GPIO"));
-        return false;
-    }
-    if(iResult == PI_NOT_PERMITTED) {
-        QMessageBox::critical(this,
-                              QString("pigpiod Error"),
-                              QString("GPIO operation not permitted"));
-        return false;
-    }
 #endif
     return true;
 }
@@ -387,7 +341,7 @@ MainWindow::on_stopButton_clicked() {
 
 void
 MainWindow::on_setupButton_clicked() {
-    setupDialog* pSetupDlg = new setupDialog();
+    setupDialog* pSetupDlg = new setupDialog(gpioHostHandle);
     pSetupDlg->exec();
     pSetupDlg->deleteLater();
 }

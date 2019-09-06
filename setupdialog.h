@@ -14,12 +14,12 @@ class setupDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit setupDialog(QWidget *parent = nullptr);
+    explicit setupDialog(int hostHandle, QWidget *parent = nullptr);
     ~setupDialog();
 
 protected:
     void restoreSettings();
-    bool gpioInit();
+    bool panTiltInit();
 
 public slots:
     void onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus);

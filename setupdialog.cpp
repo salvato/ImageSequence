@@ -14,7 +14,7 @@
 #define PAN_PIN  14 // BCM14 is Pin  8 in the 40 pin GPIO connector.
 #define TILT_PIN 26 // BCM26 IS Pin 37 in the 40 pin GPIO connector.
 
-setupDialog::setupDialog(QWidget *parent)
+setupDialog::setupDialog(int hostHandle, QWidget *parent)
     : QDialog(parent)
     , pUi(new Ui::setupDialog)
     , pImageRecorder(Q_NULLPTR)
@@ -27,7 +27,7 @@ setupDialog::setupDialog(QWidget *parent)
     // ================================================
     , panPin(PAN_PIN)
     , tiltPin(TILT_PIN)
-    , gpioHostHandle(-1)
+    , gpioHostHandle(hostHandle)
 {
     pUi->setupUi(this);
 
@@ -38,7 +38,7 @@ setupDialog::setupDialog(QWidget *parent)
 
     restoreSettings();
     // Init GPIOs
-    if(!gpioInit())
+    if(!panTiltInit())
         exit(EXIT_FAILURE);
 }
 
@@ -67,17 +67,9 @@ setupDialog::restoreSettings() {
 
 
 bool
-setupDialog::gpioInit() {
+setupDialog::panTiltInit() {
 #if defined(Q_PROCESSOR_ARM)
     int iResult;
-    gpioHostHandle = pigpio_start(QString("localhost").toLocal8Bit().data(),
-                                  QString("8888").toLocal8Bit().data());
-    if(gpioHostHandle < 0) {
-        QMessageBox::critical(this,
-                              QString("pigpiod Error !"),
-                              QString("Non riesco ad inizializzare la GPIO."));
-        return false;
-    }
     // Camera Pan-Tilt Control
     iResult = set_PWM_frequency(gpioHostHandle, panPin, PWMfrequency);
     if(iResult < 0) {
