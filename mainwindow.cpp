@@ -17,7 +17,13 @@
 #define IMAGE_QUALITY 100 // 100 is Best quality
 
 
+// ================================================
 // GPIO Numbers are Broadcom (BCM) numbers
+// ================================================
+// +5V on pins 2 or 4 in the 40 pin GPIO connector.
+// GND on pins 6, 9, 14, 20, 25, 30, 34 or 39
+// in the 40 pin GPIO connector.
+// ================================================
 #define LED_PIN  23 // BCM23 is Pin 16 in the 40 pin GPIO connector.
 
 
@@ -25,13 +31,6 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , pUi(new Ui::MainWindow)
     , pImageRecorder(Q_NULLPTR)
-    // ================================================
-    // GPIO Numbers are Broadcom (BCM) numbers
-    // ================================================
-    // +5V on pins 2 or 4 in the 40 pin GPIO connector.
-    // GND on pins 6, 9, 14, 20, 25, 30, 34 or 39
-    // in the 40 pin GPIO connector.
-    // ================================================
     , gpioLEDpin(LED_PIN)
     , gpioHostHandle(-1)
 {
