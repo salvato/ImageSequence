@@ -36,11 +36,11 @@ setupDialog::setupDialog(int hostHandle, QWidget *parent)
     pulseWidthAt_90 =  600; // in us
     pulseWidthAt90  = 2200; // in us
 
-    cameraPanValue  = (pulseWidthAt90-pulseWidthAt_90)/2+pulseWidthAt_90;
-    cameraTiltValue = cameraPanValue;
-
     pUi->dialPan->setRange(pulseWidthAt_90, pulseWidthAt90);
     pUi->dialTilt->setRange(pulseWidthAt_90, pulseWidthAt90);
+
+    cameraPanValue  = (pulseWidthAt90-pulseWidthAt_90)/2+pulseWidthAt_90;
+    cameraTiltValue = cameraPanValue;
 
     restoreSettings();
 

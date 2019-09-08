@@ -6,7 +6,7 @@
 #include <QProcess>
 #include <QTimer>
 #include <sys/types.h>
-
+#include "setupdialog.h"
 
 
 namespace Ui {
@@ -50,6 +50,7 @@ private slots:
 private:
     Ui::MainWindow* pUi;
     QProcess*       pImageRecorder;
+    setupDialog*    pSetupDlg;
 
     pid_t pid;
 

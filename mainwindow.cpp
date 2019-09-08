@@ -61,6 +61,7 @@ MainWindow::MainWindow(QWidget *parent)
     if(!gpioInit())
         exit(EXIT_FAILURE);
 
+    pSetupDlg = new setupDialog(gpioHostHandle);
     switchLampOff();
 
     // Init User Interface with restored values
@@ -328,9 +329,7 @@ MainWindow::on_stopButton_clicked() {
 
 void
 MainWindow::on_setupButton_clicked() {
-    setupDialog* pSetupDlg = new setupDialog(gpioHostHandle);
     pSetupDlg->exec();
-    pSetupDlg->deleteLater();
 }
 
 
