@@ -243,6 +243,7 @@ MainWindow::onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus)
     for(int i=0; i<widgets.size(); i++) {
         widgets[i]->setEnabled(true);
     }
+    pUi->setupButton->setEnabled(true);
     pUi->startButton->setEnabled(true);
     pUi->stopButton->setDisabled(true);
 }
@@ -304,6 +305,7 @@ MainWindow::on_startButton_clicked() {
     for(int i=0; i<widgets.size(); i++) {
         widgets[i]->setDisabled(true);
     }
+    pUi->setupButton->setDisabled(true);
     pUi->startButton->setDisabled(true);
     pUi->stopButton->setEnabled(true);
 }
@@ -322,6 +324,7 @@ MainWindow::on_stopButton_clicked() {
             widgets[i]->setEnabled(true);
         }
         pUi->startButton->setEnabled(true);
+        pUi->setupButton->setEnabled(true);
         pUi->stopButton->setDisabled(true);
     }
 }
