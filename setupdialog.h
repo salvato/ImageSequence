@@ -29,6 +29,12 @@ public slots:
     void onImageRecorderError(QProcess::ProcessError error);
     void on_dialTilt_valueChanged(int value);
     void on_dialPan_valueChanged(int value);
+    int  exec();
+
+private slots:
+    void on_buttonBox_accepted();
+
+    void on_buttonBox_rejected();
 
 private:
     Ui::setupDialog* pUi;

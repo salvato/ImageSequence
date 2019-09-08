@@ -62,9 +62,47 @@ setupDialog::~setupDialog() {
     if(gpioHostHandle >= 0)
         pigpio_stop(gpioHostHandle);
 #endif
-    // Save settings
-    QSettings settings;
     delete pUi;
+}
+
+
+int
+setupDialog::exec() {
+#if defined(Q_PROCESSOR_ARM)
+    pImageRecorder = new QProcess(this);
+    connect(pImageRecorder,
+            SIGNAL(finished(int, QProcess::ExitStatus)),
+            this,
+            SLOT(onImageRecorderClosed(int, QProcess::ExitStatus)));
+    connect(pImageRecorder,
+            SIGNAL(errorOccurred(QProcess::ProcessError)),
+            this,
+            SLOT(onImageRecorderError(QProcess::ProcessError)));
+    connect(pImageRecorder,
+            SIGNAL(started()),
+            this,
+            SLOT(onImageRecorderStarted()));
+
+    QString sCommand = QString("/usr/bin/raspistill");
+    QStringList sArguments = QStringList();
+    sArguments.append(QString("-ex auto"));                  // Exposure mode; Auto
+    sArguments.append(QString("-awb auto"));                 // White Balance; Auto
+    sArguments.append(QString("-drc off"));                  // Dynamic Range Compression: off
+    sArguments.append(QString("-p 0,0,320,240"));
+    sArguments.append(QString("-t 0"));
+
+////////////////////////////////////////////////////////////
+/// Here we could use the following (Not working at present)
+//    pImageRecorder->setProgram(sCommand);
+//    pImageRecorder->setArguments(sArguments);
+//    pImageRecorder->start();
+/// Instead we have to use:
+    for(int i=0; i<sArguments.size(); i++)
+        sCommand += QString(" %1").arg(sArguments[i]);
+    pImageRecorder->start(sCommand);
+////////////////////////////////////////////////////////////
+#endif
+    return QDialog::exec();
 }
 
 
@@ -186,6 +224,36 @@ setupDialog::setTilt(double cameraTiltValue) {
 /// Process event handlers <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 //////////////////////////////////////////////////////////////
 void
+setupDialog::on_buttonBox_accepted() {
+    // Save settings
+    QSettings settings;
+    settings.setValue("panValue",  cameraPanValue);
+    settings.setValue("tiltValue", cameraTiltValue);
+    if(pImageRecorder) {
+        pImageRecorder->disconnect();
+        pImageRecorder->terminate();
+        pImageRecorder->close();
+        pImageRecorder->waitForFinished(3000);
+    }
+    pImageRecorder->deleteLater();
+    pImageRecorder = nullptr;
+}
+
+
+void
+setupDialog::on_buttonBox_rejected() {
+    if(pImageRecorder) {
+        pImageRecorder->disconnect();
+        pImageRecorder->terminate();
+        pImageRecorder->close();
+        pImageRecorder->waitForFinished(3000);
+    }
+    pImageRecorder->deleteLater();
+    pImageRecorder = nullptr;
+}
+
+
+void
 setupDialog::onImageRecorderStarted() {
     pid = pid_t(pImageRecorder->processId());
 }
@@ -228,11 +296,7 @@ void
 setupDialog::on_dialPan_valueChanged(int value) {
     cameraPanValue  = value;
     setPan(cameraPanValue);
-    qDebug() << "Pan = " << cameraPanValue;
     update();
-    // Save settings
-    QSettings settings;
-    settings.setValue("panValue",  cameraPanValue);
 }
 
 
@@ -240,8 +304,6 @@ void
 setupDialog::on_dialTilt_valueChanged(int value) {
     cameraTiltValue = value;
     setTilt(cameraTiltValue);
-    qDebug() << "Tilt = " << cameraTiltValue;
     update();
-    QSettings settings;
-    settings.setValue("tiltValue", cameraTiltValue);
 }
+
