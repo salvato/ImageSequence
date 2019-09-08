@@ -20,10 +20,9 @@ HEADERS += setupdialog.h
 FORMS += mainwindow.ui
 FORMS += setupdialog.ui
 
-contains(QMAKE_HOST.arch, "armv7l") || contains(QMAKE_HOST.arch, "armv6l"): {
-    INCLUDEPATH += /usr/local/include
-    LIBS += -L"/usr/local/lib" -lpigpiod_if2
-}
+INCLUDEPATH += /usr/local/include
+LIBS += -L"/usr/local/lib" -lpigpiod_if2
+
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

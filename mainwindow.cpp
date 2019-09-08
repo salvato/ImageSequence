@@ -1,8 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#if defined(Q_PROCESSOR_ARM)
-    #include "pigpiod_if2.h"// The library for using GPIO pins on Raspberry
-#endif
+#include "pigpiod_if2.h"// The library for using GPIO pins on Raspberry
 #include "setupdialog.h"
 #include <signal.h>
 #include <QMessageBox>
@@ -56,7 +54,6 @@ MainWindow::MainWindow(QWidget *parent)
                         selection-background-color: rgb(128, 128, 255); \
                     }";
 
-    // Init GPIOs
     if(!gpioInit())
         exit(EXIT_FAILURE);
 
@@ -99,10 +96,9 @@ MainWindow::closeEvent(QCloseEvent *event) {
     settings.setValue("FileName", sOutFileName);
     settings.setValue("Interval", msecInterval);
     settings.setValue("TotalTime", secTotTime);
-#if defined(Q_PROCESSOR_ARM)
+    // Free GPIO
     if(gpioHostHandle >= 0)
         pigpio_stop(gpioHostHandle);
-#endif
 }
 
 
@@ -125,7 +121,6 @@ MainWindow::restoreSettings() {
 
 bool
 MainWindow::gpioInit() {
-#if defined(Q_PROCESSOR_ARM)
     int iResult;
     gpioHostHandle = pigpio_start(QString("localhost").toLocal8Bit().data(),
                                   QString("8888").toLocal8Bit().data());
@@ -153,14 +148,12 @@ MainWindow::gpioInit() {
                                    .arg(gpioLEDpin));
         return false;
     }
-#endif
     return true;
 }
 
 
 void
 MainWindow::switchLampOn() {
-#if defined(Q_PROCESSOR_ARM)
     if(gpioHostHandle >= 0)
         gpio_write(gpioHostHandle, gpioLEDpin, 1);
     else
@@ -168,7 +161,6 @@ MainWindow::switchLampOn() {
                               QString("pigpiod Error"),
                               QString("Unable to set GPIO%1 On")
                               .arg(gpioLEDpin));
-#endif
     pUi->lampStatus->setStyleSheet(sPhotoStyle);
     repaint();
 }
@@ -176,7 +168,6 @@ MainWindow::switchLampOn() {
 
 void
 MainWindow::switchLampOff() {
-#if defined(Q_PROCESSOR_ARM)
     if(gpioHostHandle >= 0)
         gpio_write(gpioHostHandle, gpioLEDpin, 0);
     else
@@ -184,7 +175,6 @@ MainWindow::switchLampOff() {
                               QString("pigpiod Error"),
                               QString("Unable to set GPIO%1 Off")
                               .arg(gpioLEDpin));
-#endif
     pUi->lampStatus->setStyleSheet(sDarkStyle);
     repaint();
 }
@@ -259,7 +249,6 @@ MainWindow::on_startButton_clicked() {
     }
     imageNum = 0;
 
-#if defined(Q_PROCESSOR_ARM)
     pImageRecorder = new QProcess(this);
     connect(pImageRecorder,
             SIGNAL(finished(int, QProcess::ExitStatus)),
@@ -298,7 +287,6 @@ MainWindow::on_startButton_clicked() {
         sCommand += QString(" %1").arg(sArguments[i]);
     pImageRecorder->start(sCommand);
 ////////////////////////////////////////////////////////////
-#endif
 
     QList<QLineEdit *> widgets = findChildren<QLineEdit *>();
     for(int i=0; i<widgets.size(); i++) {

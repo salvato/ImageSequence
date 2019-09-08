@@ -1,9 +1,7 @@
 #include "setupdialog.h"
 #include "ui_setupdialog.h"
 #include <signal.h>
-#if defined(Q_PROCESSOR_ARM)
-    #include "pigpiod_if2.h"// The library for using GPIO pins on Raspberry
-#endif
+#include "pigpiod_if2.h"// The library for using GPIO pins on Raspberry
 #include <QMessageBox>
 #include <QSettings>
 #include <QThread>
@@ -58,17 +56,14 @@ setupDialog::~setupDialog() {
         pImageRecorder->deleteLater();
         pImageRecorder = nullptr;
     }
-#if defined(Q_PROCESSOR_ARM)
     if(gpioHostHandle >= 0)
         pigpio_stop(gpioHostHandle);
-#endif
     delete pUi;
 }
 
 
 int
 setupDialog::exec() {
-#if defined(Q_PROCESSOR_ARM)
     pImageRecorder = new QProcess(this);
     connect(pImageRecorder,
             SIGNAL(finished(int, QProcess::ExitStatus)),
@@ -101,7 +96,6 @@ setupDialog::exec() {
         sCommand += QString(" %1").arg(sArguments[i]);
     pImageRecorder->start(sCommand);
 ////////////////////////////////////////////////////////////
-#endif
     return QDialog::exec();
 }
 
@@ -121,7 +115,6 @@ setupDialog::restoreSettings() {
 
 bool
 setupDialog::panTiltInit() {
-#if defined(Q_PROCESSOR_ARM)
     int iResult;
     // Camera Pan-Tilt Control
     iResult = set_PWM_frequency(gpioHostHandle, panPin, PWMfrequency);
@@ -135,7 +128,6 @@ setupDialog::panTiltInit() {
         return false;
     if(!setTilt(cameraTiltValue))
         return false;
-#endif
     return true;
 }
 
