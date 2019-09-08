@@ -20,11 +20,15 @@ public:
 protected:
     void restoreSettings();
     bool panTiltInit();
+    bool setPan(double cameraPanValue);
+    bool setTilt(double cameraTiltValue);
 
 public slots:
     void onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus);
     void onImageRecorderStarted();
     void onImageRecorderError(QProcess::ProcessError error);
+    void on_dialTilt_valueChanged(int value);
+    void on_dialPan_valueChanged(int value);
 
 private:
     Ui::setupDialog* pUi;
@@ -33,11 +37,11 @@ private:
 
     uint   panPin;
     uint   tiltPin;
-    double cameraPanAngle;
-    double cameraTiltAngle;
+    double cameraPanValue;
+    double cameraTiltValue;
     uint   PWMfrequency;     // in Hz
-    double pulseWidthAt_90;  // in us
-    double pulseWidthAt90;   // in us
+    int    pulseWidthAt_90;  // in us
+    int    pulseWidthAt90;   // in us
     int    gpioHostHandle;
 };
 

@@ -32,11 +32,18 @@ setupDialog::setupDialog(int hostHandle, QWidget *parent)
     pUi->setupUi(this);
 
     // Values to be checked with the used servos
-    PWMfrequency    =   50;   // in Hz
-    pulseWidthAt_90 =  600.0; // in us
-    pulseWidthAt90  = 2200.0; // in us
+    PWMfrequency    =   50; // in Hz
+    pulseWidthAt_90 =  600; // in us
+    pulseWidthAt90  = 2200; // in us
+
+    cameraPanValue  = (pulseWidthAt90-pulseWidthAt_90)/2+pulseWidthAt_90;
+    cameraTiltValue = cameraPanValue;
+
+    pUi->dialPan->setRange(pulseWidthAt_90, pulseWidthAt90);
+    pUi->dialTilt->setRange(pulseWidthAt_90, pulseWidthAt90);
 
     restoreSettings();
+
     // Init GPIOs
     if(!panTiltInit())
         exit(EXIT_FAILURE);
@@ -63,6 +70,14 @@ setupDialog::~setupDialog() {
 
 void
 setupDialog::restoreSettings() {
+    QSettings settings;
+    // Restore settings
+    cameraPanValue  = settings.value("panValue",  cameraPanValue).toDouble();
+    cameraTiltValue = settings.value("tiltValue", cameraTiltValue).toDouble();
+    pUi->dialPan->setValue(int(cameraPanValue));
+    pUi->dialTilt->setValue(int(cameraTiltValue));
+    // Restore Geometry and State of the window
+    restoreGeometry(settings.value("mainWindowGeometry").toByteArray());
 }
 
 
@@ -78,28 +93,75 @@ setupDialog::panTiltInit() {
                               QString("Non riesco a definire la frequenza del PWM per il Pan."));
         return false;
     }
-    double pulseWidth = pulseWidthAt_90 +(pulseWidthAt90-pulseWidthAt_90)/180.0 * (cameraPanAngle+90.0);// In us
-    iResult = set_servo_pulsewidth(gpioHostHandle, panPin, u_int32_t(pulseWidth));
+    if(!setPan(cameraPanValue))
+        return false;
+    if(!setTilt(cameraTiltValue))
+        return false;
+#endif
+    return true;
+}
+
+
+bool
+setupDialog::setPan(double cameraPanValue) {
+    double pulseWidth = cameraPanValue;// In us
+    int iResult = set_servo_pulsewidth(gpioHostHandle, panPin, u_int32_t(pulseWidth));
     if(iResult < 0) {
+        QString sError;
+        if(iResult == PI_BAD_USER_GPIO)
+            sError = QString("Bad User GPIO");
+        else if(iResult == PI_BAD_PULSEWIDTH)
+            sError = QString("Bad Pulse Width %1").arg(pulseWidth);
+        else if(iResult == PI_NOT_PERMITTED)
+            sError = QString("Not Permitted");
+        else
+            sError = QString("Unknown Error");
         QMessageBox::critical(this,
-                              QString("pigpiod Error"),
+                              sError,
                               QString("Non riesco a far partire il PWM per il Pan."));
         return false;
     }
     set_PWM_frequency(gpioHostHandle, panPin, 0);
+    iResult = set_PWM_frequency(gpioHostHandle, tiltPin, 0);
+    if(iResult == PI_BAD_USER_GPIO) {
+        QMessageBox::critical(this,
+                              QString("pigpiod Error"),
+                              QString("Bad User GPIO"));
+        return false;
+    }
+    if(iResult == PI_NOT_PERMITTED) {
+        QMessageBox::critical(this,
+                              QString("pigpiod Error"),
+                              QString("GPIO operation not permitted"));
+        return false;
+    }
+    return true;
+}
 
-    iResult = set_PWM_frequency(gpioHostHandle, tiltPin, PWMfrequency);
+
+bool
+setupDialog::setTilt(double cameraTiltValue) {
+    double pulseWidth = cameraTiltValue;// In us
+    int iResult = set_PWM_frequency(gpioHostHandle, tiltPin, PWMfrequency);
     if(iResult < 0) {
         QMessageBox::critical(this,
                               QString("pigpiod Error"),
                               QString("Non riesco a definire la frequenza del PWM per il Tilt."));
         return false;
     }
-    pulseWidth = pulseWidthAt_90 +(pulseWidthAt90-pulseWidthAt_90)/180.0 * (cameraTiltAngle+90.0);// In us
     iResult = set_servo_pulsewidth(gpioHostHandle, tiltPin, u_int32_t(pulseWidth));
     if(iResult < 0) {
+        QString sError;
+        if(iResult == PI_BAD_USER_GPIO)
+            sError = QString("Bad User GPIO");
+        else if(iResult == PI_BAD_PULSEWIDTH)
+            sError = QString("Bad Pulse Width %1").arg(pulseWidth);
+        else if(iResult == PI_NOT_PERMITTED)
+            sError = QString("Not Permitted");
+        else
+            sError = QString("Unknown Error");
         QMessageBox::critical(this,
-                              QString("pigpiod Error"),
+                              sError,
                               QString("Non riesco a far partire il PWM per il Tilt."));
         return false;
     }
@@ -116,7 +178,6 @@ setupDialog::panTiltInit() {
                               QString("GPIO operation not permitted"));
         return false;
     }
-#endif
     return true;
 }
 
@@ -162,3 +223,25 @@ setupDialog::onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus
     }
 }
 
+
+void
+setupDialog::on_dialPan_valueChanged(int value) {
+    cameraPanValue  = value;
+    setPan(cameraPanValue);
+    qDebug() << "Pan = " << cameraPanValue;
+    update();
+    // Save settings
+    QSettings settings;
+    settings.setValue("panValue",  cameraPanValue);
+}
+
+
+void
+setupDialog::on_dialTilt_valueChanged(int value) {
+    cameraTiltValue = value;
+    setTilt(cameraTiltValue);
+    qDebug() << "Tilt = " << cameraTiltValue;
+    update();
+    QSettings settings;
+    settings.setValue("tiltValue", cameraTiltValue);
+}

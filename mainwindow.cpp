@@ -19,8 +19,6 @@
 
 // GPIO Numbers are Broadcom (BCM) numbers
 #define LED_PIN  23 // BCM23 is Pin 16 in the 40 pin GPIO connector.
-#define PAN_PIN  14 // BCM14 is Pin  8 in the 40 pin GPIO connector.
-#define TILT_PIN 26 // BCM26 IS Pin 37 in the 40 pin GPIO connector.
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -35,16 +33,9 @@ MainWindow::MainWindow(QWidget *parent)
     // in the 40 pin GPIO connector.
     // ================================================
     , gpioLEDpin(LED_PIN)
-    , panPin(PAN_PIN)
-    , tiltPin(TILT_PIN)
     , gpioHostHandle(-1)
 {
     pUi->setupUi(this);
-
-    // Values to be checked with the used servos
-    PWMfrequency    =   50;   // in Hz
-    pulseWidthAt_90 =  600.0; // in us
-    pulseWidthAt90  = 2200.0; // in us
 
     restoreSettings();
 
@@ -108,8 +99,6 @@ MainWindow::closeEvent(QCloseEvent *event) {
     settings.setValue("FileName", sOutFileName);
     settings.setValue("Interval", msecInterval);
     settings.setValue("TotalTime", secTotTime);
-    settings.setValue("panAngle",  cameraPanAngle);
-    settings.setValue("tiltAngle", cameraTiltAngle);
 #if defined(Q_PROCESSOR_ARM)
     if(gpioHostHandle >= 0)
         pigpio_stop(gpioHostHandle);
@@ -127,8 +116,6 @@ MainWindow::restoreSettings() {
                                      QString("test")).toString();
     msecInterval    = settings.value("Interval", 10000).toInt();
     secTotTime      = settings.value("TotalTime", 0).toInt();
-    cameraPanAngle  = settings.value("panAngle",  0.0).toDouble();
-    cameraTiltAngle = settings.value("tiltAngle", 0.0).toDouble();
 
     // Restore Geometry and State of the window
     restoreGeometry(settings.value("mainWindowGeometry").toByteArray());

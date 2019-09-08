@@ -1,9 +1,3 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2019-09-02T15:48:09
-#
-#-------------------------------------------------
-
 QT += core
 QT += gui
 QT += widgets
@@ -16,19 +10,19 @@ DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs depr
 
 CONFIG += c++14
 
-SOURCES += main.cpp \
-    setupdialog.cpp
+SOURCES += main.cpp
 SOURCES += mainwindow.cpp
+SOURCES += setupdialog.cpp
 
-HEADERS += mainwindow.h \
-    setupdialog.h
+HEADERS += mainwindow.h
+HEADERS += setupdialog.h
 
-FORMS += mainwindow.ui \
-    setupdialog.ui
+FORMS += mainwindow.ui
+FORMS += setupdialog.ui
 
 contains(QMAKE_HOST.arch, "armv7l") || contains(QMAKE_HOST.arch, "armv6l"): {
     INCLUDEPATH += /usr/local/include
-    LIBS += -L"/usr/local/lib" -lpigpiod_if2 # To include libpigpiod_if2.so from /usr/local/lib
+    LIBS += -L"/usr/local/lib" -lpigpiod_if2
 }
 
 # Default rules for deployment.
