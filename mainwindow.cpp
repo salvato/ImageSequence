@@ -271,7 +271,6 @@ MainWindow::on_startButton_clicked() {
     sArguments.append(QString("-drc off"));                  // Dynamic Range Compression: off
     sArguments.append(QString("-q %1").arg(IMAGE_QUALITY));  // JPEG quality: 100=max
     sArguments.append(QString("-t %1").arg(secTotTime*1000));// Acquisition Time(0 = No limit)
-//    sArguments.append(QString("-n"));                        // No preview
     sArguments.append(QString("-p 0,0,320,240"));            // Preview size and position
     sArguments.append(QString("-o %1/%2_%04d.jpg")           // File name(s)
                       .arg(sBaseDir)

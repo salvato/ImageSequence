@@ -18,6 +18,7 @@ public:
     ~setupDialog();
 
 protected:
+    void closeEvent(QCloseEvent *event);
     void restoreSettings();
     bool panTiltInit();
     bool setPan(double cameraPanValue);
@@ -30,6 +31,7 @@ public slots:
     void on_dialTilt_valueChanged(int value);
     void on_dialPan_valueChanged(int value);
     int  exec();
+    void moveEvent(QMoveEvent *event);
 
 private slots:
     void on_buttonBox_accepted();

@@ -2,6 +2,7 @@
 #include "ui_setupdialog.h"
 #include <signal.h>
 #include "pigpiod_if2.h"// The library for using GPIO pins on Raspberry
+#include <QMoveEvent>
 #include <QMessageBox>
 #include <QSettings>
 #include <QThread>
@@ -11,6 +12,7 @@
 // GPIO Numbers are Broadcom (BCM) numbers
 #define PAN_PIN  14 // BCM14 is Pin  8 in the 40 pin GPIO connector.
 #define TILT_PIN 26 // BCM26 IS Pin 37 in the 40 pin GPIO connector.
+
 
 setupDialog::setupDialog(int hostHandle, QWidget *parent)
     : QDialog(parent)
@@ -40,11 +42,11 @@ setupDialog::setupDialog(int hostHandle, QWidget *parent)
     cameraPanValue  = (pulseWidthAt90-pulseWidthAt_90)/2+pulseWidthAt_90;
     cameraTiltValue = cameraPanValue;
 
-    restoreSettings();
-
     // Init GPIOs
     if(!panTiltInit())
         exit(EXIT_FAILURE);
+
+    restoreSettings();
 }
 
 
@@ -53,17 +55,33 @@ setupDialog::~setupDialog() {
         pImageRecorder->terminate();
         pImageRecorder->close();
         pImageRecorder->waitForFinished(3000);
-        pImageRecorder->deleteLater();
+        delete pImageRecorder;
         pImageRecorder = nullptr;
     }
-    if(gpioHostHandle >= 0)
-        pigpio_stop(gpioHostHandle);
     delete pUi;
+}
+
+
+void
+setupDialog::closeEvent(QCloseEvent *event) {
+    if(event->type() == QCloseEvent::Close) {
+        QSettings settings;
+        settings.setValue("setupDialog", saveGeometry());
+        if(pImageRecorder) {
+            pImageRecorder->disconnect();
+            pImageRecorder->terminate();
+            pImageRecorder->close();
+            pImageRecorder->waitForFinished(3000);
+            delete pImageRecorder;
+            pImageRecorder = nullptr;
+        }
+    }
 }
 
 
 int
 setupDialog::exec() {
+    QSettings settings;
     pImageRecorder = new QProcess(this);
     connect(pImageRecorder,
             SIGNAL(finished(int, QProcess::ExitStatus)),
@@ -77,14 +95,29 @@ setupDialog::exec() {
             SIGNAL(started()),
             this,
             SLOT(onImageRecorderStarted()));
+    restoreGeometry(settings.value("setupDialog").toByteArray());
+    return QDialog::exec();
+}
 
-    QString sCommand = QString("/usr/bin/raspistill");
-    QStringList sArguments = QStringList();
-    sArguments.append(QString("-ex auto"));                  // Exposure mode; Auto
-    sArguments.append(QString("-awb auto"));                 // White Balance; Auto
-    sArguments.append(QString("-drc off"));                  // Dynamic Range Compression: off
-    sArguments.append(QString("-p 0,0,320,240"));
-    sArguments.append(QString("-t 0"));
+
+void
+setupDialog::moveEvent(QMoveEvent *event) {
+    if(pImageRecorder) {
+        QPoint dialogPos = event->pos();
+        QPoint videoPos = pUi->labelVideo->pos();
+        QSize videoSize = pUi->labelVideo->size();
+
+        QString sCommand = QString("/usr/bin/raspistill");
+        QStringList sArguments = QStringList();
+        sArguments.append(QString("-ex auto"));                  // Exposure mode; Auto
+        sArguments.append(QString("-awb auto"));                 // White Balance; Auto
+        sArguments.append(QString("-drc off"));                  // Dynamic Range Compression: off
+        sArguments.append(QString("-t 0"));
+        sArguments.append(QString("-p %1,%2,%3,%4")
+                          .arg(dialogPos.x()+videoPos.x())
+                          .arg(dialogPos.y()+videoPos.y())
+                          .arg(videoSize.width())
+                          .arg(videoSize.height()));
 
 ////////////////////////////////////////////////////////////
 /// Here we could use the following (Not working at present)
@@ -92,11 +125,19 @@ setupDialog::exec() {
 //    pImageRecorder->setArguments(sArguments);
 //    pImageRecorder->start();
 /// Instead we have to use:
-    for(int i=0; i<sArguments.size(); i++)
-        sCommand += QString(" %1").arg(sArguments[i]);
-    pImageRecorder->start(sCommand);
+        for(int i=0; i<sArguments.size(); i++)
+            sCommand += QString(" %1").arg(sArguments[i]);
 ////////////////////////////////////////////////////////////
-    return QDialog::exec();
+        if(pImageRecorder->state() == QProcess::NotRunning)
+            pImageRecorder->start(sCommand);
+        else {
+            pImageRecorder->disconnect();
+            pImageRecorder->terminate();
+            pImageRecorder->close();
+            pImageRecorder->waitForFinished(3000);
+            pImageRecorder->start(sCommand);
+        }
+    }
 }
 
 
@@ -108,8 +149,7 @@ setupDialog::restoreSettings() {
     cameraTiltValue = settings.value("tiltValue", cameraTiltValue).toDouble();
     pUi->dialPan->setValue(int(cameraPanValue));
     pUi->dialTilt->setValue(int(cameraTiltValue));
-    // Restore Geometry and State of the window
-    restoreGeometry(settings.value("mainWindowGeometry").toByteArray());
+    restoreGeometry(settings.value("setupDialog").toByteArray());
 }
 
 
@@ -221,14 +261,16 @@ setupDialog::on_buttonBox_accepted() {
     QSettings settings;
     settings.setValue("panValue",  cameraPanValue);
     settings.setValue("tiltValue", cameraTiltValue);
+    settings.setValue("setupDialog", saveGeometry());
     if(pImageRecorder) {
         pImageRecorder->disconnect();
         pImageRecorder->terminate();
         pImageRecorder->close();
         pImageRecorder->waitForFinished(3000);
+        delete pImageRecorder;
+        pImageRecorder = nullptr;
     }
-    pImageRecorder->deleteLater();
-    pImageRecorder = nullptr;
+    accept();
 }
 
 
@@ -239,9 +281,10 @@ setupDialog::on_buttonBox_rejected() {
         pImageRecorder->terminate();
         pImageRecorder->close();
         pImageRecorder->waitForFinished(3000);
+        delete pImageRecorder;
+        pImageRecorder = nullptr;
     }
-    pImageRecorder->deleteLater();
-    pImageRecorder = nullptr;
+    reject();
 }
 
 
@@ -268,7 +311,7 @@ setupDialog::onImageRecorderError(QProcess::ProcessError error) {
 void
 setupDialog::onImageRecorderClosed(int exitCode, QProcess::ExitStatus exitStatus) {
     pImageRecorder->disconnect();
-    pImageRecorder->deleteLater();
+    delete pImageRecorder;
     pImageRecorder = nullptr;
     if(exitCode != 130) {// exitStatus==130 means process killed by Ctrl-C
         QMessageBox::critical(this,
