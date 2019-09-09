@@ -109,6 +109,8 @@ setupDialog::moveEvent(QMoveEvent *event) {
         sArguments.append(QString("-ex auto"));                  // Exposure mode; Auto
         sArguments.append(QString("-awb auto"));                 // White Balance; Auto
         sArguments.append(QString("-drc off"));                  // Dynamic Range Compression: off
+        sArguments.append(QString("-vf"));                       // Vertical Flip
+        sArguments.append(QString("-md 1"));                     // Mode 1 (1920x1080)
         sArguments.append(QString("-t 0"));
         sArguments.append(QString("-p %1,%2,%3,%4")
                           .arg(dialogPos.x()+videoPos.x())

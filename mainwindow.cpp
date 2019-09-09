@@ -128,7 +128,9 @@ MainWindow::moveEvent(QMoveEvent *event) {
         sArguments.append(QString("-drc off"));                  // Dynamic Range Compression: off
         sArguments.append(QString("-q %1").arg(IMAGE_QUALITY));  // JPEG quality: 100=max
         sArguments.append(QString("-t %1").arg(secTotTime*1000));// Acquisition Time(0 = No limit)
-        sArguments.append(QString("-dt"));                       // White Balance; Auto
+        sArguments.append(QString("-md 1"));                     // Mode 1 (1920x1080)
+        sArguments.append(QString("-vf"));                       // Vertical Flip
+        sArguments.append(QString("-dt"));                       // Date-Time file name
         sArguments.append(QString("-o %1/%2_%d.jpg")             // File name(s)
                           .arg(sBaseDir)
                           .arg(sOutFileName));
@@ -341,7 +343,9 @@ MainWindow::on_startButton_clicked() {
     sArguments.append(QString("-drc off"));                  // Dynamic Range Compression: off
     sArguments.append(QString("-q %1").arg(IMAGE_QUALITY));  // JPEG quality: 100=max
     sArguments.append(QString("-t %1").arg(secTotTime*1000));// Acquisition Time(0 = No limit)
-    sArguments.append(QString("-dt"));                       // White Balance; Auto
+    sArguments.append(QString("-vf"));                       // Vertical Flip
+    sArguments.append(QString("-md 1"));                     // Mode 1 (1920x1080)
+    sArguments.append(QString("-dt"));                       // Date-Time file name
     sArguments.append(QString("-o %1/%2_%d.jpg")             // File name(s)
                       .arg(sBaseDir)
                       .arg(sOutFileName));
