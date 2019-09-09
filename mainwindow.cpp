@@ -3,6 +3,7 @@
 #include "pigpiod_if2.h"// The library for using GPIO pins on Raspberry
 #include "setupdialog.h"
 #include <signal.h>
+#include <QMoveEvent>
 #include <QMessageBox>
 #include <QStandardPaths>
 #include <QSettings>
@@ -33,6 +34,9 @@ MainWindow::MainWindow(QWidget *parent)
     , gpioHostHandle(-1)
 {
     pUi->setupUi(this);
+    dialogPos = pos();
+    videoPos  = pUi->labelVideo->pos();
+    videoSize = pUi->labelVideo->size();
 
     restoreSettings();
 
@@ -54,6 +58,11 @@ MainWindow::MainWindow(QWidget *parent)
                         selection-background-color: rgb(128, 128, 255); \
                     }";
 
+    sBlackStyle   = "QLabel { \
+                        color: rgb(255, 255, 255); \
+                        background: rgb(0, 0, 0); \
+                        selection-background-color: rgb(128, 128, 255); \
+                    }";
     if(!gpioInit())
         exit(EXIT_FAILURE);
 
@@ -67,6 +76,7 @@ MainWindow::MainWindow(QWidget *parent)
     pUi->stopButton->setDisabled(true);
     pUi->intervalEdit->setText(QString("%1").arg(msecInterval));
     pUi->tTimeEdit->setText(QString("%1").arg(secTotTime));
+    pUi->labelVideo->setStyleSheet(sBlackStyle);
 
     intervalTimer.stop();// Probably non needed but...does'nt hurt
     connect(&intervalTimer,
@@ -99,6 +109,65 @@ MainWindow::closeEvent(QCloseEvent *event) {
     // Free GPIO
     if(gpioHostHandle >= 0)
         pigpio_stop(gpioHostHandle);
+}
+
+
+void
+MainWindow::moveEvent(QMoveEvent *event) {
+    dialogPos = event->pos();
+    videoPos = pUi->labelVideo->pos();
+    videoSize = pUi->labelVideo->size();
+    if(pImageRecorder) {
+        QString sCommand = QString("/usr/bin/raspistill");
+        QStringList sArguments = QStringList();
+        sArguments.append(QString("-s"));                        // Acquire upon receiving a SIGUSR1 signal
+        sArguments.append(QString("-ex auto"));                  // Exposure mode; Auto
+        sArguments.append(QString("-awb auto"));                 // White Balance; Auto
+        sArguments.append(QString("-drc off"));                  // Dynamic Range Compression: off
+        sArguments.append(QString("-q %1").arg(IMAGE_QUALITY));  // JPEG quality: 100=max
+        sArguments.append(QString("-t %1").arg(secTotTime*1000));// Acquisition Time(0 = No limit)
+        sArguments.append(QString("-dt"));                       // White Balance; Auto
+        sArguments.append(QString("-o %1/%2_%d.jpg")             // File name(s)
+                          .arg(sBaseDir)
+                          .arg(sOutFileName));
+        sArguments.append(QString("-p %1,%2,%3,%4")
+                          .arg(dialogPos.x()+videoPos.x())
+                          .arg(dialogPos.y()+videoPos.y())
+                          .arg(videoSize.width())
+                          .arg(videoSize.height()));
+////////////////////////////////////////////////////////////
+/// Here we could use the following (Not working at present)
+//    pImageRecorder->setProgram(sCommand);
+//    pImageRecorder->setArguments(sArguments);
+//    pImageRecorder->start();
+/// Instead we have to use:
+        for(int i=0; i<sArguments.size(); i++)
+            sCommand += QString(" %1").arg(sArguments[i]);
+////////////////////////////////////////////////////////////
+        if(pImageRecorder->state() == QProcess::NotRunning)
+            pImageRecorder->start(sCommand);
+        else {
+            pImageRecorder->disconnect();
+            pImageRecorder->terminate();
+            pImageRecorder->close();
+            pImageRecorder->waitForFinished(3000);
+            delete pImageRecorder;
+            pImageRecorder = new QProcess(this);
+            connect(pImageRecorder,
+                    SIGNAL(finished(int, QProcess::ExitStatus)),
+                    this,
+                    SLOT(onImageRecorderClosed(int, QProcess::ExitStatus)));
+            connect(pImageRecorder,
+                    SIGNAL(errorOccurred(QProcess::ProcessError)),
+                    this,
+                    SLOT(onImageRecorderError(QProcess::ProcessError)));
+            connect(pImageRecorder,
+                    SIGNAL(started()),
+                    this,
+                    SLOT(onImageRecorderStarted()));
+            pImageRecorder->start(sCommand);
+        }
+    }
 }
 
 
@@ -271,10 +340,15 @@ MainWindow::on_startButton_clicked() {
     sArguments.append(QString("-drc off"));                  // Dynamic Range Compression: off
     sArguments.append(QString("-q %1").arg(IMAGE_QUALITY));  // JPEG quality: 100=max
     sArguments.append(QString("-t %1").arg(secTotTime*1000));// Acquisition Time(0 = No limit)
-    sArguments.append(QString("-p 0,0,320,240"));            // Preview size and position
-    sArguments.append(QString("-o %1/%2_%04d.jpg")           // File name(s)
+    sArguments.append(QString("-dt"));                       // White Balance; Auto
+    sArguments.append(QString("-o %1/%2_%d.jpg")             // File name(s)
                       .arg(sBaseDir)
                       .arg(sOutFileName));
+    sArguments.append(QString("-p %1,%2,%3,%4")
+                      .arg(dialogPos.x()+videoPos.x())
+                      .arg(dialogPos.y()+videoPos.y())
+                      .arg(videoSize.width())
+                      .arg(videoSize.height()));
 
 ////////////////////////////////////////////////////////////
 /// Here we could use the following (Not working at present)

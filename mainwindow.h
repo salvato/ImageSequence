@@ -22,6 +22,7 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
 
 protected:
+    void moveEvent(QMoveEvent *event) Q_DECL_OVERRIDE;
     void restoreSettings();
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
     void switchLampOn();
@@ -72,11 +73,16 @@ private:
     QString sErrorStyle;
     QString sDarkStyle;
     QString sPhotoStyle;
+    QString sBlackStyle;
 
     QString sBaseDir;
     QString sOutFileName;
 
     QTimer intervalTimer;
+
+    QPoint dialogPos;
+    QPoint videoPos;
+    QSize videoSize;
 };
 
 #endif // MAINWINDOW_H
