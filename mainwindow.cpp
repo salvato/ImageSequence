@@ -12,7 +12,7 @@
 #include <QDir>
 
 
-#define MIN_INTERVAL 3000 // in ms (depends on the image format: jpeg is HW accelerated !)
+#define MIN_INTERVAL 1000 // in ms (depends on the image format: jpeg is HW accelerated !)
 #define IMAGE_QUALITY 100 // 100 is Best quality
 
 
