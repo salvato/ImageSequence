@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=ImageSequence
+TryExec=/home/pi/qtprojects/build-ImageSequence-Desktop-Release/ImageSequence
+Exec=/home/pi/qtprojects/build-ImageSequence-Desktop-Release/ImageSequence
+Comment=To acquire an image Sequence
+Icon=/home/pi/qtprojects/ImageSequence/movie.png
+Terminal=false
+Categories=Application
+StartupNotify=true
