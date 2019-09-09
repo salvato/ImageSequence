@@ -12,7 +12,7 @@
 #include <QDir>
 
 
-#define MIN_INTERVAL 1000 // in ms (depends on the image format: jpeg is HW accelerated !)
+#define MIN_INTERVAL 1500 // in ms (depends on the image format: jpeg is HW accelerated !)
 #define IMAGE_QUALITY 100 // 100 is Best quality
 
 
@@ -462,7 +462,7 @@ MainWindow::on_nameEdit_textChanged(const QString &arg1) {
 void
 MainWindow::onTimeToGetNewImage() {
     switchLampOn();
-    QThread::msleep(300);
+    QThread::msleep(10);
     int iErr = kill(pid, SIGUSR1);
     if(iErr == -1) {
         pUi->statusBar->showMessage(QString("Error %1 in sending SIGUSR1 signal")
