@@ -34,6 +34,8 @@ MainWindow::MainWindow(QWidget *parent)
     , gpioHostHandle(-1)
 {
     pUi->setupUi(this);
+    setFixedSize(size());
+
     dialogPos = pos();
     videoPos  = pUi->labelVideo->pos();
     videoSize = pUi->labelVideo->size();
@@ -67,6 +69,7 @@ MainWindow::MainWindow(QWidget *parent)
         exit(EXIT_FAILURE);
 
     pSetupDlg = new setupDialog(gpioHostHandle);
+
     switchLampOff();
 
     // Init User Interface with restored values
@@ -100,7 +103,6 @@ MainWindow::closeEvent(QCloseEvent *event) {
     switchLampOff();
     // Save settings
     QSettings settings;
-    settings.setValue("mainWindowGeometry", saveGeometry());
     settings.setValue("mainWindowState", saveState());
     settings.setValue("BaseDir", sBaseDir);
     settings.setValue("FileName", sOutFileName);
@@ -182,8 +184,7 @@ MainWindow::restoreSettings() {
     msecInterval    = settings.value("Interval", 10000).toInt();
     secTotTime      = settings.value("TotalTime", 0).toInt();
 
-    // Restore Geometry and State of the window
-    restoreGeometry(settings.value("mainWindowGeometry").toByteArray());
+    // Restore State of the window
     restoreState(settings.value("mainWindowState").toByteArray());
 }
 

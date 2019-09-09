@@ -30,6 +30,7 @@ setupDialog::setupDialog(int hostHandle, QWidget *parent)
     , gpioHostHandle(hostHandle)
 {
     pUi->setupUi(this);
+    setFixedSize(size());
 
     // Values to be checked with the used servos
     PWMfrequency    =   50; // in Hz
@@ -65,8 +66,6 @@ setupDialog::~setupDialog() {
 void
 setupDialog::closeEvent(QCloseEvent *event) {
     if(event->type() == QCloseEvent::Close) {
-        QSettings settings;
-        settings.setValue("setupDialog", saveGeometry());
         if(pImageRecorder) {
             pImageRecorder->disconnect();
             pImageRecorder->terminate();
@@ -81,7 +80,6 @@ setupDialog::closeEvent(QCloseEvent *event) {
 
 int
 setupDialog::exec() {
-    QSettings settings;
     pImageRecorder = new QProcess(this);
     connect(pImageRecorder,
             SIGNAL(finished(int, QProcess::ExitStatus)),
@@ -95,7 +93,6 @@ setupDialog::exec() {
             SIGNAL(started()),
             this,
             SLOT(onImageRecorderStarted()));
-    restoreGeometry(settings.value("setupDialog").toByteArray());
     return QDialog::exec();
 }
 
@@ -149,7 +146,6 @@ setupDialog::restoreSettings() {
     cameraTiltValue = settings.value("tiltValue", cameraTiltValue).toDouble();
     pUi->dialPan->setValue(int(cameraPanValue));
     pUi->dialTilt->setValue(int(cameraTiltValue));
-    restoreGeometry(settings.value("setupDialog").toByteArray());
 }
 
 
@@ -261,7 +257,6 @@ setupDialog::on_buttonBox_accepted() {
     QSettings settings;
     settings.setValue("panValue",  cameraPanValue);
     settings.setValue("tiltValue", cameraTiltValue);
-    settings.setValue("setupDialog", saveGeometry());
     if(pImageRecorder) {
         pImageRecorder->disconnect();
         pImageRecorder->terminate();
